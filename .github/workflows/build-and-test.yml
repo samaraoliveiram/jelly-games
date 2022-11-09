@@ -1,0 +1,78 @@
+name: Build and Test Elixir Server
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      matrix:
+        elixir: ["1.14.1"]
+        otp: ["25.0.3"]
+        node-version: ["16.8.0"]
+
+    services:
+      db:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: server_test
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Get deps cache
+        uses: actions/cache@v2
+        with:
+          path: deps/
+          key: >-
+            deps-${{ runner.os }}-${{ matrix.otp }}-
+            ${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+      - name: Get build cache
+        uses: actions/cache@v2
+        with:
+          path: _build/test/
+          key: >-
+            build-${{ runner.os }}-${{ matrix.otp }}-
+            ${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+      - name: Install Dependencies
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+          mix deps.compile
+      - name: Check for unused deps
+        run: mix deps.unlock --check-unused
+      - name: Compile code
+        run: mix compile --warnings-as-errors
+      - name: Check code formatting
+        run: mix format --check-formatted
+      - name: Run Credo
+        run: mix credo suggest --min-priority=normal
+      - name: Run Migrations
+        run: mix ecto.create && mix ecto.migrate
+      - name: Run Tests
+        run: mix coveralls.json --warnings-as-errors
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
