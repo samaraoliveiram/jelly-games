@@ -7,7 +7,6 @@ defmodule Jelly.MixProject do
       version: "0.1.0",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -17,6 +16,10 @@ defmodule Jelly.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test
+      ],
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:ex_unit]
       ]
     ]
   end
@@ -58,7 +61,9 @@ defmodule Jelly.MixProject do
       {:plug_cowboy, "~> 2.5"},
       # Testing
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.15", only: :test}
+      {:excoveralls, "~> 0.15", only: :test},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.8", only: :dev}
     ]
   end
 
