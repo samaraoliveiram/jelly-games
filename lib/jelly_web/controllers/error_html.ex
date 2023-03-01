@@ -1,4 +1,5 @@
 defmodule JellyWeb.ErrorHTML do
+  @moduledoc false
   use JellyWeb, :html
 
   # If you want to customize your error pages,
