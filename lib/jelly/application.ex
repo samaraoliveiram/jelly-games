@@ -17,9 +17,12 @@ defmodule Jelly.Application do
       # Start Finch
       {Finch, name: Jelly.Finch},
       # Start the Endpoint (http/https)
-      JellyWeb.Endpoint
+      JellyWeb.Endpoint,
       # Start a worker by calling: Jelly.Worker.start_link(arg)
       # {Jelly.Worker, arg}
+      # Starts Jelly Supervisor
+      {Registry, keys: :unique, name: Jelly.LobbyRegistry},
+      Jelly.LobbySupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
