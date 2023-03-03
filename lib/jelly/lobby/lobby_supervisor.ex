@@ -1,4 +1,6 @@
 defmodule Jelly.LobbySupervisor do
+  @moduledoc false
+
   use DynamicSupervisor
 
   def start_link(_) do
