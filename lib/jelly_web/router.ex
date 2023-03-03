@@ -17,10 +17,7 @@ defmodule JellyWeb.Router do
   scope "/", JellyWeb do
     pipe_through :browser
 
-    live "/", LobbyLive, :index
-    live "/lobby/new", LobbyLive, :new
-    live "/lobby/join", LobbyLive, :join
-    live "/lobby/:id", LobbyLive, :show
+    get "/", PageController, :home
   end
 
   # Other scopes may use custom stacks.

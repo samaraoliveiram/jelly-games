@@ -25,22 +25,14 @@ defmodule Jelly.Lobby do
     end
   end
 
-  @spec join(code(), binary()) :: {:ok, t()} | {:error, :not_found}
+  @spec join(code(), binary()) :: {:ok, t()} | {:error, atom()}
   def join(code, player) do
-    case GenServer.whereis(via_tuple(code)) do
-      nil -> {:error, :not_found}
-      _ -> GenServer.call(via_tuple(code), {:join, player})
-    end
+    GenServer.call(via_tuple(code), {:join, player})
   end
 
   @spec get(binary()) :: {:ok, t()} | {:error, :not_found}
   def get(code) do
     GenServer.call(via_tuple(code), :get)
-  end
-
-  @spec get(binary()) :: {:ok, t()} | {:error, :not_found}
-  def close(code) do
-    GenServer.stop(via_tuple(code), :close)
   end
 
   # GenServer code
@@ -56,18 +48,14 @@ defmodule Jelly.Lobby do
 
   def handle_call({:join, player}, _, lobby) do
     lobby = Map.update(lobby, :players, [], fn players -> [player | players] end)
-    {:reply, {:ok, lobby}, lobby}
+    {:reply, lobby, lobby}
   end
 
   def handle_call(:get, _, lobby) do
     {:reply, lobby, lobby}
   end
 
-  def handle_info(:end, _, lobby) do
-    {:stop, :normal, lobby}
-  end
-
-  defp via_tuple(code) do
+  def via_tuple(code) do
     {:via, Registry, {Jelly.LobbyRegistry, code}}
   end
 end
