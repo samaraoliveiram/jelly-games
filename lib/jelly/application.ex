@@ -22,7 +22,8 @@ defmodule Jelly.Application do
       # {Jelly.Worker, arg}
       # Starts Jelly Supervisor
       {Registry, keys: :unique, name: Jelly.LobbyRegistry},
-      Jelly.LobbySupervisor
+      Jelly.LobbySupervisor,
+      JellyWeb.LobbyPresence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

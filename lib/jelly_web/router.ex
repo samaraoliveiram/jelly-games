@@ -15,12 +15,16 @@ defmodule JellyWeb.Router do
   end
 
   scope "/", JellyWeb do
-    pipe_through :browser
+    pipe_through [:browser, :home_redirect]
 
-    live "/", LobbyLive, :index
-    live "/lobby/new", LobbyLive, :new
-    live "/lobby/join", LobbyLive, :join
-    live "/lobby/:id", LobbyLive, :show
+    live "/", LobbyLive.Home
+
+    get "/sessions/:player/:lobby_id", SessionController, :create
+  end
+
+  scope "/", JellyWeb do
+    pipe_through [:browser, :lobby_redirect]
+    live "/lobby", LobbyLive.Show
   end
 
   # Other scopes may use custom stacks.
@@ -42,6 +46,26 @@ defmodule JellyWeb.Router do
 
       live_dashboard "/dashboard", metrics: JellyWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  defp lobby_redirect(conn, _) do
+    case get_session(conn) do
+      %{"lobby_id" => _, "player" => _} ->
+        conn
+
+      _ ->
+        redirect(conn, to: "/")
+    end
+  end
+
+  defp home_redirect(conn, _) do
+    case get_session(conn) do
+      %{"lobby_id" => _, "player" => _} ->
+        redirect(conn, to: "/lobby")
+
+      _ ->
+        conn
     end
   end
 end
