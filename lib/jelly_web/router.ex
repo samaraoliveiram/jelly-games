@@ -49,7 +49,7 @@ defmodule JellyWeb.Router do
     end
   end
 
-  defp lobby_redirect(conn, _) do
+  def lobby_redirect(conn, _) do
     case get_session(conn) do
       %{"lobby_id" => _, "player" => _} ->
         conn
@@ -59,7 +59,7 @@ defmodule JellyWeb.Router do
     end
   end
 
-  defp home_redirect(conn, _) do
+  def home_redirect(conn, _) do
     case get_session(conn) do
       %{"lobby_id" => _, "player" => _} ->
         redirect(conn, to: "/lobby")

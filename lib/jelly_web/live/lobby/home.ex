@@ -4,18 +4,18 @@ defmodule JellyWeb.LobbyLive.Home do
 
   def mount(_params, _session, socket) do
     form_params = %{"player_name" => "", "lobby_id" => ""}
-    socket = assign(socket, form: to_form(form_params)) |> IO.inspect(label: "HOME SOCKET")
+    socket = assign(socket, form: to_form(form_params))
     {:ok, socket}
   end
 
   def render(assigns) do
     ~H"""
     <%= if @live_action != :show do %>
-      <div class="text-zinc-900">
-        <h1 class="text-5xl font-bold text-center">Welcome to Mimiquinha2000!</h1>
-        <div class="flex space-x-4 justify-around p-10">
-          <.button class="button h-10 w-32" phx-click={show_modal("new-modal")}>New</.button>
-          <.button class="button h-10 w-32" phx-click={show_modal("join-modal")}>Join</.button>
+      <div class="home-body">
+        <div class="welcome-text">Welcome to Mimiquinha2000!</div>
+        <div class="action-buttons">
+          <.button phx-click={show_modal("new-modal")}>New</.button>
+          <.button phx-click={show_modal("join-modal")}>Join</.button>
         </div>
       </div>
       <!-- New Modal -->

@@ -9,7 +9,7 @@ defmodule JellyWeb.Endpoint do
     key: "_jelly_key",
     signing_salt: "EYM9SpyC",
     same_site: "Lax",
-    max_age: 18000
+    max_age: 18_000
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
