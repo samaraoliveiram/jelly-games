@@ -4,15 +4,13 @@ defmodule Jelly.Lobby do
 
   alias Jelly.LobbySupervisor
 
-  @code_length 10
-
   defstruct players: [], code: nil
   @type code :: binary()
   @type t :: %__MODULE__{code: code(), players: list()}
 
   @spec create(binary()) :: {:ok, binary()} | any()
   def create(player) do
-    code = to_string(:rand.uniform(@code_length))
+    code = to_string(System.os_time())
 
     spec = %{
       id: __MODULE__,

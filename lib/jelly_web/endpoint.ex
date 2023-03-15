@@ -8,7 +8,8 @@ defmodule JellyWeb.Endpoint do
     store: :cookie,
     key: "_jelly_key",
     signing_salt: "EYM9SpyC",
-    same_site: "Lax"
+    same_site: "Lax",
+    max_age: 18_000
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
