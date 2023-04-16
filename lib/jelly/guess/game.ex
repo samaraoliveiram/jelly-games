@@ -36,7 +36,7 @@ defmodule Jelly.Guess.Game do
     %__MODULE__{code: code, phases: @phases}
   end
 
-  def define_teams(game = %{phases: [:defining_teams | _]}, players) when length(players) >= 4 do
+  def define_teams(%{phases: [:defining_teams | _]} = game, players) when length(players) >= 4 do
     index = round(length(players) / 2)
 
     teams =
@@ -51,10 +51,10 @@ defmodule Jelly.Guess.Game do
     |> set_next_phase()
   end
 
-  def put_words(game = %{phases: [:word_selection | _]}, new_words) do
+  def put_words(%{phases: [:word_selection | _]} = game, new_words) do
     game = Map.update!(game, :words, fn words -> new_words ++ words end)
 
-    if(length(game.words) == length(game.players) * 3) do
+    if length(game.words) == length(game.players) * 3 do
       set_next_phase(game)
     else
       game

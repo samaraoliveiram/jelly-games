@@ -1,4 +1,6 @@
 defmodule Jelly.GuessFactory do
+  @moduledoc false
+
   use ExMachina
 
   alias Jelly.Guess.Player

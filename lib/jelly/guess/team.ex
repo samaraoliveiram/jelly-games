@@ -1,4 +1,6 @@
 defmodule Jelly.Guess.Team do
+  @moduledoc false
+
   alias Jelly.Guess.Player
 
   @enforce_keys :name

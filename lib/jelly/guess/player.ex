@@ -1,10 +1,12 @@
 defmodule Jelly.Guess.Player do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset
 
   embedded_schema do
-    field :nickname, :string
-    field :avatar, :string, default: "user"
+    field(:nickname, :string)
+    field(:avatar, :string, default: "user")
   end
 
   @type t :: %__MODULE__{
