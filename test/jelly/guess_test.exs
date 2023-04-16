@@ -114,4 +114,37 @@ defmodule Jelly.GuessTest do
       assert_receive {:timer, _}
     end
   end
+
+  describe "backup test" do
+    test "should restore state after server crash" do
+      Process.flag(:trap_exit, true)
+      game_code = "game_code"
+
+      {:ok, pid} = Guess.start_link(game_code)
+      Process.monitor(pid)
+
+      Guess.define_teams(game_code, build_list(4, :player))
+      Process.exit(pid, :kaboom)
+
+      assert_receive {:DOWN, _, _, ^pid, _}
+
+      {:ok, pid} = Guess.start_link(game_code)
+      assert hd(:sys.get_state(pid).phases) == :word_selection
+    end
+
+    test "should not restore state after a timeout" do
+      Process.flag(:trap_exit, true)
+      game_code = "game_code_2"
+
+      {:ok, pid} = Guess.start_link(game_code)
+      Process.monitor(pid)
+
+      Guess.define_teams(game_code, build_list(4, :player))
+      send(pid, :timeout)
+      assert_receive {:DOWN, _, _, ^pid, _}
+
+      {:ok, pid} = Guess.start_link(game_code)
+      assert hd(:sys.get_state(pid).phases) == :defining_teams
+    end
+  end
 end

@@ -131,14 +131,9 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def terminate({:shutdown, :timeout} = reason, %{code: code}) do
+  def terminate({:shutdown, :timeout}, %{code: code}) do
     # terminate is not garantee to be called, maybe define later a TTL for ETS
     delete_backup(code)
-    :ok
-  end
-
-  @impl true
-  def terminate(_reason, _game) do
     :ok
   end
 

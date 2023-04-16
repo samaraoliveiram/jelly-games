@@ -115,11 +115,11 @@ defmodule Jelly.Guess.GameTest do
         |> Game.switch_teams()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
-      %{teams: [team_b | _]} = Game.mark_team_point(game) |> IO.inspect()
+      %{teams: [team_b | _]} = Game.mark_team_point(game)
       assert team_a.name != team_b.name
     end
 
-    test "should end game if finish phases" do
+    test "should have winner when finish phases" do
       players = build_list(4, :player)
 
       game =
@@ -132,6 +132,25 @@ defmodule Jelly.Guess.GameTest do
         Map.update!(game, :remaining_words, fn _ -> words_list(1) end)
         |> Game.mark_team_point()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+        |> Game.mark_team_point()
+        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+
+      assert %{winner: ^team_name, phases: []} = Game.mark_team_point(game)
+    end
+
+    test "the team that didnt the last point can win" do
+      players = build_list(4, :player)
+
+      game =
+        %{teams: [_ | [%{name: team_name}]]} =
+        Game.new(gen_game_code())
+        |> Game.define_teams(players)
+        |> Game.put_words(words_list(12))
+        |> Game.switch_teams()
+        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+        |> Game.mark_team_point()
+        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+        |> Game.switch_teams()
         |> Game.mark_team_point()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
