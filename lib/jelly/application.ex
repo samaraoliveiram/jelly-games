@@ -18,13 +18,14 @@ defmodule Jelly.Application do
       {Finch, name: Jelly.Finch},
       # Start the Endpoint (http/https)
       JellyWeb.Endpoint,
-      # Start a worker by calling: Jelly.Worker.start_link(arg)
-      # {Jelly.Worker, arg}
+      # Starts Jelly Registry
+      {Registry, keys: :unique, name: Jelly.GameRegistry},
       # Starts Jelly Supervisor
-      {Registry, keys: :unique, name: Jelly.LobbyRegistry},
-      Jelly.LobbySupervisor,
+      {DynamicSupervisor, name: Jelly.DynamicSupervisor},
       JellyWeb.LobbyPresence
     ]
+
+    :ets.new(:games_table, [:public, :named_table])
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

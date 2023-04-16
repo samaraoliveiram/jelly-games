@@ -31,3 +31,6 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Define Game timer for 1ms for testing porpuses
+config :jelly, :timer_interval, 1
