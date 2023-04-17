@@ -67,7 +67,8 @@ defmodule Jelly.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: :test},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.8", only: :dev}
+      {:sobelow, "~> 0.8", only: :dev},
+      {:ex_machina, "~> 2.7.0", only: [:dev, :test]}
     ]
   end
 
