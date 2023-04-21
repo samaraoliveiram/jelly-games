@@ -1,4 +1,5 @@
 defmodule JellyWeb.Components.Logo do
+  @moduledoc false
   use Phoenix.Component
 
   def logo(assigns) do

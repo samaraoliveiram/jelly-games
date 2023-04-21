@@ -99,7 +99,7 @@ jobs:
         run: mix format --check-formatted
 
       - name: Run Credo
-        run: mix credo suggest --min-priority=normal
+        run: mix credo suggest --min-priority=normal --ignore Credo.Check.Design.TagTODO
 
       - name: Run Sobelow
         run: mix sobelow

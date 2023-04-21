@@ -20,10 +20,11 @@ defmodule Jelly.Guess do
     {:ok, code}
   end
 
-  def get(code) do
+  def join(code) do
     response = GenServer.whereis(register_name(code))
 
     if is_pid(response) do
+      subscribe(code)
       {:ok, response}
     else
       {:error, :not_found}

@@ -38,21 +38,15 @@ defmodule JellyWeb.HomeLive do
   end
 
   def handle_info({"new", params}, socket) do
-    case Guess.new() do
-      {:ok, game_code} ->
-        {:noreply, redirect(socket, to: ~p"/session/new?game_code=#{game_code}&player=#{params}")}
-
-      _error ->
-        socket = put_flash(socket, :error, "Something went wrong, try again later")
-        {:noreply, socket}
-    end
+    {:ok, game_code} = Guess.new()
+    {:noreply, redirect(socket, to: ~p"/session/new?game_code=#{game_code}&player=#{params}")}
   end
 
   def handle_info({"join", params}, socket) do
     %{"game_code" => game_code} = params
     player = Map.drop(params, ["game_code"])
 
-    case Guess.get(game_code) do
+    case Guess.join(game_code) do
       {:ok, _} ->
         {:noreply, redirect(socket, to: ~p"/session/new?game_code=#{game_code}&player=#{player}")}
 
@@ -65,7 +59,6 @@ defmodule JellyWeb.HomeLive do
   end
 
   def handle_params(%{"action" => action}, _, socket) do
-    IO.inspect(action, label: "ACTION UPDATED")
     socket = assign(socket, action: action)
     {:noreply, socket}
   end

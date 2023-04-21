@@ -1,4 +1,5 @@
 defmodule JellyWeb.FormComponent do
+  @moduledoc false
   use JellyWeb, :live_component
   import Ecto.Changeset
 

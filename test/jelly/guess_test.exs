@@ -8,14 +8,14 @@ defmodule Jelly.GuessTest do
     assert {:ok, _game_code} = Guess.new()
   end
 
-  describe "get/1" do
+  describe "join/1" do
     test "should return the game pid if exists" do
       {:ok, game_code} = Guess.new()
-      assert {:ok, _pid} = Guess.get(game_code)
+      assert {:ok, _pid} = Guess.join(game_code)
     end
 
     test "should return :not_found if the game doesn't exist" do
-      assert {:error, :not_found} = Guess.get("some_code")
+      assert {:error, :not_found} = Guess.join("some_code")
     end
   end
 
