@@ -8,6 +8,7 @@ defmodule JellyWeb.Router do
     plug :put_root_layout, {JellyWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"}
+    plug :fetch_live_flash
   end
 
   pipeline :api do
@@ -15,16 +16,12 @@ defmodule JellyWeb.Router do
   end
 
   scope "/", JellyWeb do
-    pipe_through [:browser, :home_redirect]
+    pipe_through [:browser]
 
-    live "/", LobbyLive.Home
+    live "/", HomeLive
 
-    get "/sessions/:player/:lobby_id", SessionController, :create
-  end
-
-  scope "/", JellyWeb do
-    pipe_through [:browser, :lobby_redirect]
-    live "/lobby", LobbyLive.Show
+    get "/session/new", SessionController, :new
+    live "/game/:id", GameLive
   end
 
   # Other scopes may use custom stacks.
@@ -46,26 +43,6 @@ defmodule JellyWeb.Router do
 
       live_dashboard "/dashboard", metrics: JellyWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-  end
-
-  def lobby_redirect(conn, _) do
-    case get_session(conn) do
-      %{"lobby_id" => _, "player" => _} ->
-        conn
-
-      _ ->
-        redirect(conn, to: "/")
-    end
-  end
-
-  def home_redirect(conn, _) do
-    case get_session(conn) do
-      %{"lobby_id" => _, "player" => _} ->
-        redirect(conn, to: "/lobby")
-
-      _ ->
-        conn
     end
   end
 end

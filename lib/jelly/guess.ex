@@ -20,6 +20,16 @@ defmodule Jelly.Guess do
     {:ok, code}
   end
 
+  def get(code) do
+    response = GenServer.whereis(register_name(code))
+
+    if is_pid(response) do
+      {:ok, response}
+    else
+      {:error, :not_found}
+    end
+  end
+
   @spec define_teams(binary(), [Player.t()]) :: {:ok, map()} | {:error, any()}
   def define_teams(code, players) do
     if length(players) >= 4 do
