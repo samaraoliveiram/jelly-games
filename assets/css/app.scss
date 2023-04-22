@@ -2,78 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Raleway&display=swap");
+
 * {
-    @apply text-slate-800;
+  @apply font-raleway;
 }
 
-/* Home */
-.home-body {
-    @apply p-8 absolute inset-1/4;
-
-    & .welcome-text {
-        @apply text-5xl font-bold text-center;
-    }
-
-    & .action-buttons {
-        @apply flex space-x-4 justify-evenly mt-10;
-
-        & button {
-            @apply h-10 w-32 bg-violet-600 hover:bg-violet-700;
-        }
-    }
+.button-dark {
+  @apply bg-gradient-to-br from-violet-700 to-violet-900 text-sm font-semibold leading-6 text-white;
+  @apply rounded-lg py-2 px-3;
 }
 
-
-
-/* Lobby */
-.body-screen {
-    @apply bg-gradient-to-r from-violet-200 to-violet-300;
-
-    main {
-        @apply pt-14 pb-20 sm:px-6 lg:px-8 h-screen;
-
-    }
-}
-
-.lobby {
-    @apply h-full grid grid-cols-4 grid-rows-1 gap-4 place-content-center p-8;
-
-    & .player-panel {
-
-        @apply p-4 bg-gradient-to-br from-violet-100/50 to-violet-50/50 border-2 border-stone-50/25 rounded-lg;
-
-        & .player {
-
-            @apply p-3 mb-3 align-middle leading-6 flex bg-violet-50/25 border-2 border-stone-50/25 rounded-lg;
-
-            & .player-name {
-                @apply ml-2;
-            }
-
-            & .current-player {
-                @apply font-bold;
-            }
-        }
-    }
-
-
-    & .lobby-body {
-        @apply p-4 col-span-3 bg-gradient-to-br from-violet-100/50 to-violet-50/50 border-2 border-stone-50/25 rounded-lg;
-
-        & .how-to-play {
-            @apply p-4 h-full;
-
-            & ul{
-                @apply text-sm ml-3  list-inside list-disc p-8;
-
-                & ::marker {
-                    @apply text-violet-500;
-                }
-            }
-
-            & ol{
-                @apply list-inside list-decimal ml-4;
-            }
-        }
-    }
+.form {
+  @apply flex flex-col space-y-6;
+  input {
+  }
 }
