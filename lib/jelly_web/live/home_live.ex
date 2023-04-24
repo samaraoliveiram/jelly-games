@@ -6,7 +6,7 @@ defmodule JellyWeb.HomeLive do
   alias Jelly.Guess
 
   def mount(_params, _session, socket) do
-    socket = assign(socket, action: nil)
+    socket = assign(socket, action: nil, game_code: nil)
     {:ok, socket}
   end
 
@@ -30,7 +30,12 @@ defmodule JellyWeb.HomeLive do
           <.link phx-click={JS.navigate("/")}>
             <Heroicons.chevron_left class="w-6 mb-4 stroke-purple-700" />
           </.link>
-          <.live_component id="form" module={JellyWeb.FormComponent} action={@action} />
+          <.live_component
+            id="form"
+            module={JellyWeb.FormComponent}
+            action={@action}
+            game_code={@game_code}
+          />
         </div>
       <% end %>
     </div>
@@ -39,16 +44,18 @@ defmodule JellyWeb.HomeLive do
 
   def handle_info({"new", params}, socket) do
     {:ok, game_code} = Guess.new()
-    {:noreply, redirect(socket, to: ~p"/session/new?game_code=#{game_code}&player=#{params}")}
+    %{"nickname" => nickname} = params
+
+    {:noreply, redirect(socket, to: "/session/new?game_code=#{game_code}&nickname=#{nickname}")}
   end
 
   def handle_info({"join", params}, socket) do
-    %{"game_code" => game_code} = params
-    player = Map.drop(params, ["game_code"])
+    %{"game_code" => game_code, "nickname" => nickname} = params
 
-    case Guess.join(game_code) do
+    case Guess.get(game_code) do
       {:ok, _} ->
-        {:noreply, redirect(socket, to: ~p"/session/new?game_code=#{game_code}&player=#{player}")}
+        {:noreply,
+         redirect(socket, to: "/session/new?game_code=#{game_code}&nickname=#{nickname}")}
 
       {:error, :not_found} ->
         socket =
@@ -58,9 +65,9 @@ defmodule JellyWeb.HomeLive do
     end
   end
 
-  def handle_params(%{"action" => action}, _, socket) do
-    socket = assign(socket, action: action)
-    {:noreply, socket}
+  def handle_params(%{"action" => action} = params, _, socket) do
+    game_code = params["game_code"]
+    {:noreply, assign(socket, action: action, game_code: game_code)}
   end
 
   def handle_params(_params, _uri, socket) do

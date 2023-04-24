@@ -5,10 +5,10 @@ defmodule Jelly.Guess do
   will be broadcasted
   """
   use GenServer
-  import Jelly.Guess.Notifier
+  alias Jelly.Guess.Notifier
   alias Jelly.Guess.{Game, Player, Timer}
 
-  @timeout 300_000
+  @timeout 1_800_000
   @supervisor Jelly.DynamicSupervisor
   @timer 60_000
 
@@ -16,15 +16,17 @@ defmodule Jelly.Guess do
   def new() do
     code = Game.gen_code()
     DynamicSupervisor.start_child(@supervisor, child_spec(code))
-    subscribe(code)
     {:ok, code}
   end
 
-  def join(code) do
+  def subscribe(code) do
+    Notifier.subscribe(code)
+  end
+
+  def get(code) do
     response = GenServer.whereis(register_name(code))
 
     if is_pid(response) do
-      subscribe(code)
       {:ok, response}
     else
       {:error, :not_found}
@@ -86,7 +88,7 @@ defmodule Jelly.Guess do
   def handle_call({:define_teams, players}, _, game) do
     game = Game.define_teams(game, players)
 
-    handle_instructions(game, [{:broadcast, :move_phase}])
+    handle_instructions(game, broadcast: :move_phase)
 
     update_backup(game)
     {:reply, {:ok, summary(game)}, game, @timeout}
@@ -97,7 +99,7 @@ defmodule Jelly.Guess do
     updated_game = Game.put_words(game, words)
 
     if different_phase?(updated_game, game) do
-      handle_instructions(updated_game, [{:broadcast, :move_phase}, {:timer, :start}])
+      handle_instructions(updated_game, broadcast: :move_phase, timer: :start)
     end
 
     update_backup(updated_game)
@@ -131,7 +133,7 @@ defmodule Jelly.Guess do
   def handle_call(:switch_team, _, game) do
     game = Game.switch_teams(game)
 
-    handle_instructions(game, [{:broadcast, :switch_team}, {:timer, :restart}])
+    handle_instructions(game, broadcast: :switch_team, timer: :restart)
     update_backup(game)
     {:reply, {:ok, summary(game)}, game, @timeout}
   end
@@ -142,9 +144,18 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def terminate({:shutdown, :timeout}, %{code: code}) do
+  def terminate({:shutdown, :timeout}, game) do
     # terminate is not garantee to be called, maybe define later a TTL for ETS
-    delete_backup(code)
+    handle_instructions(game, broadcast: :shutdown)
+    # backup is deleted only in a normal exit
+    delete_backup(game.code)
+    :ok
+  end
+
+  @impl true
+  def terminate(_reason, _game) do
+    # backup is not deleted in crash because because server will be reinitialized
+    # and eventually timed out
     :ok
   end
 
@@ -156,7 +167,7 @@ defmodule Jelly.Guess do
     Enum.each(instructions, fn instruction ->
       case instruction do
         {:broadcast, message} ->
-          broadcast(game.code, {message, summary(game)})
+          Notifier.broadcast(game.code, {message, summary(game)})
 
         {:timer, message} ->
           timer(message, game)
@@ -173,14 +184,15 @@ defmodule Jelly.Guess do
   end
 
   defp summary(game) do
-    current_team = List.first(game.teams)
+    current_team = List.first(game.teams, %{})
 
     %{
       code: game.code,
       teams: game.teams,
       current_phase: List.first(game.phases),
-      current_team: current_team.name,
-      current_player: List.first(current_team.remaining_players).id,
+      current_team: Map.get(current_team, :name),
+      current_player:
+        Map.get(current_team, :remaining_players, []) |> List.first(%{}) |> Map.get(:id),
       current_word: List.first(game.remaining_words),
       winner: game.winner
     }

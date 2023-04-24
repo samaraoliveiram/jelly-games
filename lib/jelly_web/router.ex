@@ -1,6 +1,8 @@
 defmodule JellyWeb.Router do
   use JellyWeb, :router
 
+  import JellyWeb.GamePlug
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -16,12 +18,24 @@ defmodule JellyWeb.Router do
   end
 
   scope "/", JellyWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :redirect_if_has_player]
 
     live "/", HomeLive
+  end
 
-    get "/session/new", SessionController, :new
-    live "/game/:id", GameLive
+  scope "/", JellyWeb do
+    pipe_through [:browser, :require_player]
+
+    live_session :has_player, on_mount: {JellyWeb.GamePlug, :ensure_has_player} do
+      live "/game/:id", GameLive
+    end
+  end
+
+  scope "/session", JellyWeb do
+    pipe_through [:browser]
+
+    get "/new", SessionController, :new
+    get "/delete", SessionController, :delete
   end
 
   # Other scopes may use custom stacks.

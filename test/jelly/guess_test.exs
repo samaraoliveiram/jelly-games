@@ -8,14 +8,14 @@ defmodule Jelly.GuessTest do
     assert {:ok, _game_code} = Guess.new()
   end
 
-  describe "join/1" do
+  describe "get/1" do
     test "should return the game pid if exists" do
       {:ok, game_code} = Guess.new()
-      assert {:ok, _pid} = Guess.join(game_code)
+      assert {:ok, _pid} = Guess.get(game_code)
     end
 
     test "should return :not_found if the game doesn't exist" do
-      assert {:error, :not_found} = Guess.join("some_code")
+      assert {:error, :not_found} = Guess.get("some_code")
     end
   end
 
@@ -32,6 +32,7 @@ defmodule Jelly.GuessTest do
       players = build_list(4, :player)
 
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
 
       assert {:ok, %{teams: [_ | _]}} = Guess.define_teams(game_code, players)
       assert_receive {:move_phase, %{teams: [_ | _]}}
@@ -64,6 +65,7 @@ defmodule Jelly.GuessTest do
       words = words_list(12)
 
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
 
       assert {:ok, _} = Guess.put_words(game_code, words)
@@ -75,6 +77,7 @@ defmodule Jelly.GuessTest do
     test "should return an updated state with the team points" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       Guess.put_words(game_code, words_list(12))
 
@@ -86,6 +89,7 @@ defmodule Jelly.GuessTest do
     test "when different phase should cancel timer and broadcast move_phase" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       Guess.put_words(game_code, words_list(12))
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
@@ -98,6 +102,7 @@ defmodule Jelly.GuessTest do
     test "when have winner should cancel timer and broadcast end_game" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       Guess.put_words(game_code, words_list(12))
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
@@ -116,6 +121,7 @@ defmodule Jelly.GuessTest do
     test "should return an updated state with a differente current team playing" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       {:ok, %{current_team: previous_team}} = Guess.put_words(game_code, words_list(12))
 

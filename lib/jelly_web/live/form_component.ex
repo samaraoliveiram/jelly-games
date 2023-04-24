@@ -4,8 +4,14 @@ defmodule JellyWeb.FormComponent do
   import Ecto.Changeset
 
   def update(assigns, socket) do
-    action = assigns.action
-    socket = assign(socket, action: action, form: to_form(changeset(action), as: :data))
+    params = %{game_code: assigns.game_code}
+
+    socket =
+      assign(socket,
+        action: assigns.action,
+        form: to_form(changeset(params, assigns.action), as: :data)
+      )
+
     {:ok, socket}
   end
 
@@ -62,7 +68,7 @@ defmodule JellyWeb.FormComponent do
     |> Map.put(:action, :validate)
   end
 
-  defp changeset(params \\ %{}, action) do
+  defp changeset(params, action) do
     {%{}, %{nickname: :string, game_code: :string}}
     |> cast(params, [:nickname, :game_code])
     |> validate_required(:nickname)

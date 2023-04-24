@@ -22,7 +22,7 @@ defmodule Jelly.Application do
       {Registry, keys: :unique, name: Jelly.GameRegistry},
       # Starts Jelly Supervisor
       {DynamicSupervisor, name: Jelly.DynamicSupervisor},
-      JellyWeb.LobbyPresence
+      JellyWeb.Presence
     ]
 
     :ets.new(:games_table, [:public, :named_table])

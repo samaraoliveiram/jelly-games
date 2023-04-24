@@ -2,8 +2,9 @@ defmodule JellyWeb.SessionController do
   use JellyWeb, :controller
 
   def new(conn, params) do
-    %{"player" => player_params, "game_code" => game_code} = params
-    player = Jelly.Guess.Player.new(player_params)
+    %{"nickname" => nickname, "game_code" => game_code} = params
+
+    player = Jelly.Guess.Player.new(nickname)
 
     conn
     |> put_session(:player, player)
@@ -12,12 +13,9 @@ defmodule JellyWeb.SessionController do
   end
 
   def delete(conn, _) do
-    conn =
-      conn
-      |> delete_session(:player)
-      |> delete_session(:game_code)
-      |> redirect(to: "/")
-
     conn
+    |> delete_session(:player)
+    |> delete_session(:game_code)
+    |> redirect(to: "/")
   end
 end
