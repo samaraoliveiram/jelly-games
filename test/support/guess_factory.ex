@@ -6,9 +6,7 @@ defmodule Jelly.GuessFactory do
   alias Jelly.Guess.Player
 
   def player_factory do
-    %Player{
-      nickname: sequence("nickname")
-    }
+    Player.new(sequence("nickname"))
   end
 
   def words_list(number) do

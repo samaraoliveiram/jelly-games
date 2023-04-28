@@ -62,6 +62,24 @@ defmodule Jelly.Guess.Timer do
     end
   end
 
+  # def handle_call(:restart_timer, _from, state) do
+  #   counter = state.period
+
+  #   {:ok, timer} =
+  #     if state.timer == nil do
+  #       Logger.info("Start timer for the period: #{state.period}ms")
+  #       :timer.send_interval(@interval, :tick)
+  #     else
+  #       :timer.cancel(state.timer)
+  #       Logger.info("Canceled timer")
+  #       Logger.info("Start timer for the period: #{state.period}ms")
+  #       :timer.send_interval(@interval, :tick)
+  #     end
+
+  #   broadcast(state.code, {:timer, counter})
+  #   {:reply, :ok, %{state | timer: timer, counter: counter}}
+  # end
+
   def handle_info(:tick, state) do
     counter = state.counter - @interval
     Logger.info("Timer counter: #{counter}")

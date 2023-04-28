@@ -89,7 +89,7 @@ defmodule Jelly.Guess.GameTest do
       assert new_phase != old_phase
     end
 
-    test "should put loser team first when words end" do
+    test "should put loser team first when remaining words end" do
       players = build_list(4, :player)
 
       game =
@@ -103,7 +103,7 @@ defmodule Jelly.Guess.GameTest do
       assert winner_team.name != loser_team.name
     end
 
-    test "should switch team when words end and they are tied" do
+    test "should switch team when remaining words end and they are tied" do
       players = build_list(4, :player)
 
       game =
@@ -112,11 +112,46 @@ defmodule Jelly.Guess.GameTest do
         |> Game.define_teams(players)
         |> Game.put_words(words_list(12))
         |> Game.mark_team_point()
-        |> Game.switch_teams()
-        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
-      %{teams: [team_b | _]} = Game.mark_team_point(game)
-      assert team_a.name != team_b.name
+      # team A marks one point
+
+      %{teams: [current_team | _]} =
+        game
+        |> Game.switch_teams()
+        # then team B start playing
+        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+        |> Game.mark_team_point()
+
+      # team B marks one point but the phase ends and they are tied, so as team
+      # B were playing team A is the current team
+
+      assert team_a.name == current_team.name
+    end
+
+    test "should not switch team when remaining words end and current team is the loser" do
+      players = build_list(4, :player)
+
+      game =
+        %{teams: [_team_a | [team_b]]} =
+        Game.new(gen_game_code())
+        |> Game.define_teams(players)
+        |> Game.put_words(words_list(12))
+        |> Game.mark_team_point()
+        |> Game.mark_team_point()
+
+      # team a marks 2 points
+
+      %{teams: [current_team | _]} =
+        game
+        |> Game.switch_teams()
+        # now team b is playing
+        |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
+        |> Game.mark_team_point()
+
+      # team b marks 1 point but the phase ends because there is no words
+      # remaining, team b have less point so still the current team playing
+
+      assert team_b.name == current_team.name
     end
 
     test "should have winner when finish phases" do

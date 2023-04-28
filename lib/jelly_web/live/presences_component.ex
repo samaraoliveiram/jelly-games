@@ -1,7 +1,10 @@
 defmodule JellyWeb.PresencesComponent do
   @moduledoc """
-  Parent should implement handle_info call for pressence_diff messages
+  Parent should implement two handle_info calls:
+   1. to receive %{event: "presence_diff", payload: payload} and send to child using send_update
+   2. to receive {:presences, presences} to receive the updated presence list
   """
+
   use JellyWeb, :live_component
   alias JellyWeb.Presence
 
@@ -13,6 +16,8 @@ defmodule JellyWeb.PresencesComponent do
       |> remove_presences(diff.leaves)
       |> add_presences(diff.joins)
 
+    send_to_parent(socket.assigns.presences)
+
     {:ok, socket}
   end
 
@@ -22,16 +27,14 @@ defmodule JellyWeb.PresencesComponent do
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Jelly.PubSub, topic)
-
-      {:ok, _} =
-        Presence.track(self(), topic, player.id, %{
-          name: player.nickname
-        })
+      Presence.track(self(), topic, player.id, player)
     end
 
     presences =
       Presence.list(@topic <> game_code)
       |> format_presence_to_map()
+
+    send_to_parent(presences)
 
     socket = assign(socket, :presences, presences)
     {:ok, socket}
@@ -40,13 +43,11 @@ defmodule JellyWeb.PresencesComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="bg-gray-400">
-        <ul>
-          <li :for={{_player_id, data} <- @presences}>
-            <%= data.name %>
-          </li>
-        </ul>
-      </div>
+      <ul>
+        <li :for={{_player_id, data} <- @presences}>
+          <%= data.nickname %>
+        </li>
+      </ul>
     </div>
     """
   end
@@ -64,5 +65,9 @@ defmodule JellyWeb.PresencesComponent do
 
   defp add_presences(socket, joins) do
     assign(socket, presences: Map.merge(socket.assigns.presences, format_presence_to_map(joins)))
+  end
+
+  defp send_to_parent(presences) do
+    send(self(), {:presences, presences})
   end
 end

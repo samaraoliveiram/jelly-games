@@ -41,6 +41,7 @@ defmodule Jelly.Guess.Game do
 
     teams =
       players
+      |> Enum.map(& &1.id)
       |> Enum.shuffle()
       |> Enum.split(index)
       |> Tuple.to_list()
@@ -54,11 +55,7 @@ defmodule Jelly.Guess.Game do
   def put_words(%{phases: [:word_selection | _]} = game, new_words) do
     game = Map.update!(game, :words, fn words -> new_words ++ words end)
 
-    if length(game.words) == length(game.players) * 3 do
-      set_next_phase(game)
-    else
-      game
-    end
+    maybe_complete_phase(game)
   end
 
   def mark_team_point(game) do
@@ -114,6 +111,7 @@ defmodule Jelly.Guess.Game do
     cond do
       a_points > b_points -> [b, a]
       a_points == b_points -> [b, a]
+      true -> [a, b]
     end
   end
 
@@ -122,9 +120,15 @@ defmodule Jelly.Guess.Game do
   end
 
   defp maybe_complete_phase(game) do
-    case game.remaining_words do
-      [] -> set_next_phase(game)
-      _ -> game
+    cond do
+      current_phase(game) in @waiting_phases && length(game.words) == length(game.players) * 3 ->
+        set_next_phase(game)
+
+      current_phase(game) in @guessing_phases && game.remaining_words == [] ->
+        set_next_phase(game)
+
+      true ->
+        game
     end
   end
 

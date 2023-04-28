@@ -8,6 +8,21 @@
   @apply font-raleway;
 }
 
+body {
+  @apply h-screen bg-gradient-to-br from-blue-500 to-teal-400;
+
+  header {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+.screen-centered {
+  @apply h-screen w-full fixed top-0 left-0 flex justify-center content-center flex-wrap;
+}
+
 .button-dark {
   @apply bg-gradient-to-br from-violet-700 to-violet-900 text-sm font-semibold leading-6 text-white;
   @apply rounded-lg py-2 px-3;
@@ -17,4 +32,12 @@
   @apply flex flex-col space-y-6;
   input {
   }
+}
+
+.panel {
+  @apply bg-gradient-to-r from-violet-700/50 to-violet-200/50;
+}
+
+.expand-animation {
+  @apply transition-transform scale-110 duration-300 delay-150;
 }

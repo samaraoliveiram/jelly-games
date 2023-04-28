@@ -12,32 +12,37 @@ defmodule JellyWeb.HomeLive do
 
   def render(assigns) do
     ~H"""
-    <div>
-      <div class="w-full flex pt-12 pb-4">
-        <.logo />
+    <div class="screen-centered">
+      <div
+        class="flex flex-col w-full scale-0 transition-transform ease-in-out duration-1000"
+        phx-mounted={JS.add_class("scale-100")}
+      >
+        <div class="pb-4">
+          <.logo />
+        </div>
+        <%= if @action == nil do %>
+          <div class="form w-3/4 mx-auto max-w-xs pt-4">
+            <button class="button-dark" phx-click={JS.patch("/?action=new")}>
+              New Game
+            </button>
+            <button class="button-dark" phx-click={JS.patch("/?action=join")}>
+              Join Game
+            </button>
+          </div>
+        <% else %>
+          <div class="w-3/4 mx-auto max-w-xs pt-4">
+            <.link phx-click={JS.navigate("/")}>
+              <Heroicons.chevron_left class="w-6 mb-4 stroke-purple-700" />
+            </.link>
+            <.live_component
+              id="form"
+              module={JellyWeb.FormComponent}
+              action={@action}
+              game_code={@game_code}
+            />
+          </div>
+        <% end %>
       </div>
-      <%= if @action == nil do %>
-        <div class="form w-3/4 mx-auto max-w-xs pt-4">
-          <button class="button-dark" phx-click={JS.patch("/?action=new")}>
-            New Game
-          </button>
-          <button class="button-dark" phx-click={JS.patch("/?action=join")}>
-            Join Game
-          </button>
-        </div>
-      <% else %>
-        <div class="w-3/4 mx-auto max-w-xs pt-4">
-          <.link phx-click={JS.navigate("/")}>
-            <Heroicons.chevron_left class="w-6 mb-4 stroke-purple-700" />
-          </.link>
-          <.live_component
-            id="form"
-            module={JellyWeb.FormComponent}
-            action={@action}
-            game_code={@game_code}
-          />
-        </div>
-      <% end %>
     </div>
     """
   end

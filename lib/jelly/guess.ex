@@ -8,9 +8,9 @@ defmodule Jelly.Guess do
   alias Jelly.Guess.Notifier
   alias Jelly.Guess.{Game, Player, Timer}
 
-  @timeout 1_800_000
+  @timeout :timer.minutes(15)
   @supervisor Jelly.DynamicSupervisor
-  @timer 60_000
+  @timer :timer.seconds(60)
 
   @spec new :: {:ok, binary()}
   def new() do
@@ -27,7 +27,7 @@ defmodule Jelly.Guess do
     response = GenServer.whereis(register_name(code))
 
     if is_pid(response) do
-      {:ok, response}
+      GenServer.call(register_name(code), :get)
     else
       {:error, :not_found}
     end
@@ -55,7 +55,9 @@ defmodule Jelly.Guess do
   def mark_point(code), do: GenServer.call(register_name(code), :mark_point)
 
   @spec switch_team(binary()) :: {:ok, map()} | any()
-  def switch_team(code), do: GenServer.call(register_name(code), :switch_team)
+  def switch_team(code), do: GenServer.cast(register_name(code), :switch_team)
+
+  def restart(code), do: GenServer.call(register_name(code), :restart)
 
   @doc false
   def start_link(code) do
@@ -85,10 +87,15 @@ defmodule Jelly.Guess do
   end
 
   @impl true
+  def handle_call(:get, _, game) do
+    {:reply, {:ok, summary(game)}, game, @timeout}
+  end
+
+  @impl true
   def handle_call({:define_teams, players}, _, game) do
     game = Game.define_teams(game, players)
 
-    handle_instructions(game, broadcast: :move_phase)
+    handle_instructions(game, broadcast: :game_updated)
 
     update_backup(game)
     {:reply, {:ok, summary(game)}, game, @timeout}
@@ -99,7 +106,7 @@ defmodule Jelly.Guess do
     updated_game = Game.put_words(game, words)
 
     if different_phase?(updated_game, game) do
-      handle_instructions(updated_game, broadcast: :move_phase, timer: :start)
+      handle_instructions(updated_game, broadcast: :game_updated, timer: :start)
     end
 
     update_backup(updated_game)
@@ -113,13 +120,13 @@ defmodule Jelly.Guess do
     messages =
       cond do
         updated_game.winner != nil ->
-          [broadcast: :mark_point, broadcast: :end_game]
+          [timer: :cancel, broadcast: :game_updated]
 
         different_phase?(updated_game, game) ->
-          [timer: :cancel, broadcast: :mark_point, broadcast: :move_phase]
+          [timer: :restart, broadcast: :game_updated]
 
         true ->
-          [broadcast: :mark_point]
+          [broadcast: :game_updated]
       end
 
     handle_instructions(updated_game, messages)
@@ -130,32 +137,33 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def handle_call(:switch_team, _, game) do
-    game = Game.switch_teams(game)
+  def handle_call(:restart, _, game) do
+    game = Game.new(game.code)
+    handle_instructions(game, broadcast: :game_updated)
 
-    handle_instructions(game, broadcast: :switch_team, timer: :restart)
-    update_backup(game)
     {:reply, {:ok, summary(game)}, game, @timeout}
   end
 
   @impl true
+  def handle_cast(:switch_team, game) do
+    game = Game.switch_teams(game)
+
+    handle_instructions(game, broadcast: :game_updated, timer: :restart)
+    update_backup(game)
+    {:noreply, game, @timeout}
+  end
+
+  @impl true
   def handle_info(:timeout, game) do
+    handle_instructions(game, broadcast: :shutdown)
     {:stop, {:shutdown, :timeout}, game}
   end
 
   @impl true
   def terminate({:shutdown, :timeout}, game) do
     # terminate is not garantee to be called, maybe define later a TTL for ETS
-    handle_instructions(game, broadcast: :shutdown)
     # backup is deleted only in a normal exit
     delete_backup(game.code)
-    :ok
-  end
-
-  @impl true
-  def terminate(_reason, _game) do
-    # backup is not deleted in crash because because server will be reinitialized
-    # and eventually timed out
     :ok
   end
 
@@ -191,8 +199,7 @@ defmodule Jelly.Guess do
       teams: game.teams,
       current_phase: List.first(game.phases),
       current_team: Map.get(current_team, :name),
-      current_player:
-        Map.get(current_team, :remaining_players, []) |> List.first(%{}) |> Map.get(:id),
+      current_player: Map.get(current_team, :remaining_players, []) |> List.first(%{}),
       current_word: List.first(game.remaining_words),
       winner: game.winner
     }
