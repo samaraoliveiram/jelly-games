@@ -149,12 +149,11 @@ defmodule Jelly.GuessTest do
       game_code = "game_code"
 
       {:ok, pid} = Guess.start_link(game_code)
-      Process.monitor(pid)
 
       Guess.define_teams(game_code, build_list(4, :player))
       Process.exit(pid, :kaboom)
 
-      assert_receive {:DOWN, _, _, ^pid, _}
+      assert_receive {:EXIT, ^pid, :kaboom}
 
       {:ok, pid} = Guess.start_link(game_code)
       assert hd(:sys.get_state(pid).phases) == :word_selection
@@ -174,8 +173,5 @@ defmodule Jelly.GuessTest do
       {:ok, pid} = Guess.start_link(game_code)
       assert hd(:sys.get_state(pid).phases) == :defining_teams
     end
-  end
-
-  test "terminate" do
   end
 end

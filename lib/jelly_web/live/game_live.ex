@@ -10,7 +10,14 @@ defmodule JellyWeb.GameLive do
 
     case Guess.get(game_code) do
       {:ok, summary} ->
-        {:ok, assign(socket, players: %{}, summary: summary, words_done: false, timer: 0)}
+        {:ok,
+         assign(socket,
+           players: %{},
+           summary: summary,
+           words_done: false,
+           timer: 0,
+           my_team: get_my_team(summary.teams, socket.assigns.player.id)
+         )}
 
       _ ->
         socket = put_flash(socket, :error, "Game no longer available")
@@ -37,8 +44,9 @@ defmodule JellyWeb.GameLive do
             <.words_form :if={@summary.current_phase == :word_selection} words_done={@words_done} />
             <div :if={@summary.current_phase in [:password, :mimicry, :one_password]}>
               <.timer :if={@timer > 0} timer={@timer} />
+              <p>Your team: Team <%= @my_team %></p>
               <p>Phase: <%= @summary.current_phase %></p>
-              <p>Current team: <%= @summary.current_team %></p>
+              <p>Team playing: <%= @summary.current_team %></p>
               <p>
                 Current player: <%= get_in(@players, [@summary.current_player, Access.key!(:nickname)]) %>
               </p>
@@ -98,7 +106,8 @@ defmodule JellyWeb.GameLive do
         {:noreply, put_flash(socket, :error, "Need 4 players to start")}
 
       {:ok, summary} ->
-        {:noreply, assign(socket, summary: summary)}
+        my_team = get_my_team(summary.teams, socket.assigns.player.id)
+        {:noreply, assign(socket, summary: summary, my_team: my_team)}
     end
   end
 
@@ -139,5 +148,10 @@ defmodule JellyWeb.GameLive do
   def handle_info({:shutdown, _summary}, socket) do
     socket = put_flash(socket, :error, "Game no longer available")
     {:noreply, redirect(socket, to: ~p"/session/delete")}
+  end
+
+  defp get_my_team(teams, player_id) do
+    team = Enum.find(teams, fn team -> player_id in team.players end)
+    team && team.name
   end
 end
