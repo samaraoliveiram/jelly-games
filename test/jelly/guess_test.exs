@@ -106,7 +106,9 @@ defmodule Jelly.GuessTest do
       Guess.define_teams(game_code, players)
       Guess.put_words(game_code, words_list(12))
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
+      Guess.next_phase(game_code)
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
+      Guess.next_phase(game_code)
       Enum.each(1..11, fn _ -> Guess.mark_point(game_code) end)
 
       assert {:ok, %{winner: winner}} = Guess.mark_point(game_code)

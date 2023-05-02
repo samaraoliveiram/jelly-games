@@ -12,7 +12,7 @@ defmodule JellyWeb.GameLive do
       {:ok, summary} ->
         {:ok,
          assign(socket,
-           players: %{},
+           presences: %{},
            summary: summary,
            words_done: false,
            timer: 0,
@@ -56,9 +56,14 @@ defmodule JellyWeb.GameLive do
                 <.button phx-click="point">Correct guess</.button>
               </div>
             </div>
+            <div :if={@summary.current_phase == :scores}>
+              <.points teams={@summary.teams} />
+              <.button phx-click="next_phase">Next Phase</.button>
+            </div>
           </div>
           <div :if={@summary.winner != nil}>
-            <p class="4xl">Winner: <%= @summary.winner %></p>
+            <p class="4xl">Winner: Team <%= @summary.winner %></p>
+            <.points teams={@summary.teams} />
             <.button phx-click="restart">Restart Game</.button>
           </div>
         </div>
@@ -94,12 +99,25 @@ defmodule JellyWeb.GameLive do
     """
   end
 
+  defp points(assigns) do
+    ~H"""
+    <p>Team points</p>
+    <%= for team <-@teams do %>
+      <p>Team <%= team.name %></p>
+      <p :for={{key, value} <- team.points}>
+        <%= to_string(key) %>
+        <%= value %>
+      </p>
+    <% end %>
+    """
+  end
+
   def handle_event("exit", _params, socket) do
     {:noreply, redirect(socket, to: ~p"/session/delete")}
   end
 
   def handle_event("start", _params, socket) do
-    players = Map.values(socket.assigns.players)
+    players = Map.values(socket.assigns.presences)
 
     case Guess.define_teams(socket.assigns.game_code, players) do
       {:error, :not_enough_players} ->
@@ -126,6 +144,11 @@ defmodule JellyWeb.GameLive do
     {:noreply, assign(socket, summary: summary)}
   end
 
+  def handle_event("next_phase", _, socket) do
+    Guess.next_phase(socket.assigns.game_code)
+    {:noreply, socket}
+  end
+
   def handle_info({:game_updated, summary}, socket) do
     {:noreply, assign(socket, summary: summary)}
   end
@@ -135,9 +158,8 @@ defmodule JellyWeb.GameLive do
     {:noreply, socket}
   end
 
-  def handle_info({:presences, players}, socket) do
-    # players = Map.merge(socket.assigns.players, players)
-    {:noreply, assign(socket, :players, players)}
+  def handle_info({:presences, presences}, socket) do
+    {:noreply, assign(socket, :presences, presences)}
   end
 
   def handle_info({:timer, count}, socket) do

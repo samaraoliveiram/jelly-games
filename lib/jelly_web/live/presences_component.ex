@@ -22,7 +22,6 @@ defmodule JellyWeb.PresencesComponent do
   end
 
   def update(%{game_code: game_code, player: player}, socket) do
-    # socket = assign(socket, player: assigns.player, game_code: assigns.game_code)
     topic = @topic <> game_code
 
     if connected?(socket) do

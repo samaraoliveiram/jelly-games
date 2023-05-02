@@ -54,6 +54,8 @@ defmodule Jelly.Guess do
   @spec mark_point(binary()) :: {:ok, map()} | any()
   def mark_point(code), do: GenServer.call(register_name(code), :mark_point)
 
+  def next_phase(code), do: GenServer.cast(register_name(code), :next_phase)
+
   @spec switch_team(binary()) :: {:ok, map()} | any()
   def switch_team(code), do: GenServer.cast(register_name(code), :switch_team)
 
@@ -123,7 +125,7 @@ defmodule Jelly.Guess do
           [timer: :cancel, broadcast: :game_updated]
 
         different_phase?(updated_game, game) ->
-          [timer: :restart, broadcast: :game_updated]
+          [timer: :cancel, broadcast: :game_updated]
 
         true ->
           [broadcast: :game_updated]
@@ -142,6 +144,13 @@ defmodule Jelly.Guess do
     handle_instructions(game, broadcast: :game_updated)
 
     {:reply, {:ok, summary(game)}, game, @timeout}
+  end
+
+  def handle_cast(:next_phase, game) do
+    game = Game.set_next_phase(game)
+    handle_instructions(game, broadcast: :game_updated, timer: :start)
+
+    {:noreply, game, @timeout}
   end
 
   @impl true
@@ -197,6 +206,7 @@ defmodule Jelly.Guess do
     %{
       code: game.code,
       teams: game.teams,
+      players: game.players,
       current_phase: List.first(game.phases),
       current_team: Map.get(current_team, :name),
       current_player: Map.get(current_team, :remaining_players, []) |> List.first(%{}),

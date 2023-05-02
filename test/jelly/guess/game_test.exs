@@ -166,8 +166,10 @@ defmodule Jelly.Guess.GameTest do
       game =
         Map.update!(game, :remaining_words, fn _ -> words_list(1) end)
         |> Game.mark_team_point()
+        |> Game.set_next_phase()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
         |> Game.mark_team_point()
+        |> Game.set_next_phase()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
       assert %{winner: ^team_name, phases: []} = Game.mark_team_point(game)
@@ -184,9 +186,11 @@ defmodule Jelly.Guess.GameTest do
         |> Game.switch_teams()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
         |> Game.mark_team_point()
+        |> Game.set_next_phase()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
         |> Game.switch_teams()
         |> Game.mark_team_point()
+        |> Game.set_next_phase()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
       assert %{winner: ^team_name, phases: []} = Game.mark_team_point(game)
