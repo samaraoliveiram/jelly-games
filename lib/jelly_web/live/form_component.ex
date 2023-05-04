@@ -4,15 +4,21 @@ defmodule JellyWeb.FormComponent do
   import Ecto.Changeset
 
   def update(assigns, socket) do
-    action = assigns.action
-    socket = assign(socket, action: action, form: to_form(changeset(action), as: :data))
+    params = %{game_code: assigns.game_code}
+
+    socket =
+      assign(socket,
+        action: assigns.action,
+        form: to_form(changeset(params, assigns.action), as: :data)
+      )
+
     {:ok, socket}
   end
 
   def render(assigns) do
     # todo: adjust form validation to only changed field
     ~H"""
-    <div>
+    <div phx-mounted={JS.focus_first(to: "form")}>
       <.form class="form" for={@form} phx-submit="submit" phx-change="validate" phx-target={@myself}>
         <.input
           name="nickname"
@@ -21,19 +27,22 @@ defmodule JellyWeb.FormComponent do
           placeholder="some cool nickname"
           autocomplete="off"
         />
-        <%= if @action == "join" do %>
-          <.input
-            :if={@action == "join"}
-            name="game_code"
-            phx-debounce="1000"
-            field={@form[:game_code]}
-            placeholder="put the game code"
-            autocomplete="off"
-          />
-          <.button class="button-dark" phx-disable-with="Joining...">Join Game</.button>
-        <% else %>
-          <.button class="button-dark" phx-disable-with="Creating...">Create Game</.button>
-        <% end %>
+        <.input
+          :if={@action == "join"}
+          name="game_code"
+          phx-debounce="1000"
+          field={@form[:game_code]}
+          placeholder="put the game code"
+          autocomplete="off"
+        />
+        <div class="m-auto">
+          <.button :if={@action == "join"} class="dark-button" phx-disable-with="Joining...">
+            Join Game
+          </.button>
+          <.button :if={@action != "join"} class="dark-button" phx-disable-with="Creating...">
+            New Game
+          </.button>
+        </div>
       </.form>
     </div>
     """
@@ -62,11 +71,11 @@ defmodule JellyWeb.FormComponent do
     |> Map.put(:action, :validate)
   end
 
-  defp changeset(params \\ %{}, action) do
+  defp changeset(params, action) do
     {%{}, %{nickname: :string, game_code: :string}}
     |> cast(params, [:nickname, :game_code])
     |> validate_required(:nickname)
-    |> validate_length(:nickname, min: 3, max: 100)
+    |> validate_length(:nickname, min: 3, max: 15)
     |> validate_join(action)
   end
 

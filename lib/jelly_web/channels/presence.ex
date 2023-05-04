@@ -1,4 +1,4 @@
-defmodule JellyWeb.LobbyPresence do
+defmodule JellyWeb.Presence do
   @moduledoc """
   Provides presence tracking to channels and processes.
 

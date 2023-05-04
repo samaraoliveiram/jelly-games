@@ -5,27 +5,29 @@ defmodule Jelly.Guess do
   will be broadcasted
   """
   use GenServer
-  import Jelly.Guess.Notifier
+  alias Jelly.Guess.Notifier
   alias Jelly.Guess.{Game, Player, Timer}
 
-  @timeout 300_000
+  @timeout :timer.minutes(15)
   @supervisor Jelly.DynamicSupervisor
-  @timer 60_000
+  @timer :timer.seconds(60)
 
   @spec new :: {:ok, binary()}
   def new() do
     code = Game.gen_code()
     DynamicSupervisor.start_child(@supervisor, child_spec(code))
-    subscribe(code)
     {:ok, code}
   end
 
-  def join(code) do
+  def subscribe(code) do
+    Notifier.subscribe(code)
+  end
+
+  def get(code) do
     response = GenServer.whereis(register_name(code))
 
     if is_pid(response) do
-      subscribe(code)
-      {:ok, response}
+      GenServer.call(register_name(code), :get)
     else
       {:error, :not_found}
     end
@@ -52,8 +54,12 @@ defmodule Jelly.Guess do
   @spec mark_point(binary()) :: {:ok, map()} | any()
   def mark_point(code), do: GenServer.call(register_name(code), :mark_point)
 
+  def next_phase(code), do: GenServer.cast(register_name(code), :next_phase)
+
   @spec switch_team(binary()) :: {:ok, map()} | any()
-  def switch_team(code), do: GenServer.call(register_name(code), :switch_team)
+  def switch_team(code), do: GenServer.cast(register_name(code), :switch_team)
+
+  def restart(code), do: GenServer.call(register_name(code), :restart)
 
   @doc false
   def start_link(code) do
@@ -83,10 +89,15 @@ defmodule Jelly.Guess do
   end
 
   @impl true
+  def handle_call(:get, _, game) do
+    {:reply, {:ok, summary(game)}, game, @timeout}
+  end
+
+  @impl true
   def handle_call({:define_teams, players}, _, game) do
     game = Game.define_teams(game, players)
 
-    handle_instructions(game, [{:broadcast, :move_phase}])
+    handle_instructions(game, broadcast: :game_updated)
 
     update_backup(game)
     {:reply, {:ok, summary(game)}, game, @timeout}
@@ -97,7 +108,7 @@ defmodule Jelly.Guess do
     updated_game = Game.put_words(game, words)
 
     if different_phase?(updated_game, game) do
-      handle_instructions(updated_game, [{:broadcast, :move_phase}, {:timer, :start}])
+      handle_instructions(updated_game, broadcast: :game_updated, timer: :start)
     end
 
     update_backup(updated_game)
@@ -111,13 +122,13 @@ defmodule Jelly.Guess do
     messages =
       cond do
         updated_game.winner != nil ->
-          [broadcast: :mark_point, broadcast: :end_game]
+          [timer: :cancel, broadcast: :game_updated]
 
         different_phase?(updated_game, game) ->
-          [timer: :cancel, broadcast: :mark_point, broadcast: :move_phase]
+          [timer: :cancel, broadcast: :game_updated]
 
         true ->
-          [broadcast: :mark_point]
+          [broadcast: :game_updated]
       end
 
     handle_instructions(updated_game, messages)
@@ -128,23 +139,40 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def handle_call(:switch_team, _, game) do
+  def handle_call(:restart, _, game) do
+    game = Game.new(game.code)
+    handle_instructions(game, broadcast: :game_updated)
+
+    {:reply, {:ok, summary(game)}, game, @timeout}
+  end
+
+  def handle_cast(:next_phase, game) do
+    game = Game.set_next_phase(game)
+    handle_instructions(game, broadcast: :game_updated, timer: :start)
+
+    {:noreply, game, @timeout}
+  end
+
+  @impl true
+  def handle_cast(:switch_team, game) do
     game = Game.switch_teams(game)
 
-    handle_instructions(game, [{:broadcast, :switch_team}, {:timer, :restart}])
+    handle_instructions(game, broadcast: :game_updated, timer: :restart)
     update_backup(game)
-    {:reply, {:ok, summary(game)}, game, @timeout}
+    {:noreply, game, @timeout}
   end
 
   @impl true
   def handle_info(:timeout, game) do
+    handle_instructions(game, broadcast: :shutdown)
     {:stop, {:shutdown, :timeout}, game}
   end
 
   @impl true
-  def terminate({:shutdown, :timeout}, %{code: code}) do
+  def terminate({:shutdown, :timeout}, game) do
     # terminate is not garantee to be called, maybe define later a TTL for ETS
-    delete_backup(code)
+    # backup is deleted only in a normal exit
+    delete_backup(game.code)
     :ok
   end
 
@@ -156,7 +184,7 @@ defmodule Jelly.Guess do
     Enum.each(instructions, fn instruction ->
       case instruction do
         {:broadcast, message} ->
-          broadcast(game.code, {message, summary(game)})
+          Notifier.broadcast(game.code, {message, summary(game)})
 
         {:timer, message} ->
           timer(message, game)
@@ -173,14 +201,15 @@ defmodule Jelly.Guess do
   end
 
   defp summary(game) do
-    current_team = List.first(game.teams)
+    current_team = List.first(game.teams, %{})
 
     %{
       code: game.code,
       teams: game.teams,
+      players: game.players,
       current_phase: List.first(game.phases),
-      current_team: current_team.name,
-      current_player: List.first(current_team.remaining_players).id,
+      current_team: Map.get(current_team, :name),
+      current_player: Map.get(current_team, :remaining_players, []) |> List.first(%{}),
       current_word: List.first(game.remaining_words),
       winner: game.winner
     }

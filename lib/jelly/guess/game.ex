@@ -25,8 +25,8 @@ defmodule Jelly.Guess.Game do
         }
 
   @guessing_phases [:password, :mimicry, :one_password]
-  @waiting_phases [:defining_teams, :word_selection]
-  @phases @waiting_phases ++ @guessing_phases
+  @setup_phases [:defining_teams, :word_selection]
+  @phases @setup_phases ++ Enum.intersperse(@guessing_phases, :scores)
 
   def gen_code() do
     to_string(System.os_time())
@@ -41,6 +41,7 @@ defmodule Jelly.Guess.Game do
 
     teams =
       players
+      |> Enum.map(& &1.id)
       |> Enum.shuffle()
       |> Enum.split(index)
       |> Tuple.to_list()
@@ -53,12 +54,7 @@ defmodule Jelly.Guess.Game do
 
   def put_words(%{phases: [:word_selection | _]} = game, new_words) do
     game = Map.update!(game, :words, fn words -> new_words ++ words end)
-
-    if length(game.words) == length(game.players) * 3 do
-      set_next_phase(game)
-    else
-      game
-    end
+    maybe_complete_phase(game)
   end
 
   def mark_team_point(game) do
@@ -79,15 +75,18 @@ defmodule Jelly.Guess.Game do
     %{game | teams: [team_b, team_a]}
   end
 
-  defp set_next_phase(game) do
-    [_ | next_phases] = game.phases
+  def set_next_phase(game) do
+    [current_phase | next_phases] = game.phases
 
-    case next_phases do
-      [] ->
+    cond do
+      next_phases == [] ->
         game = %{game | phases: next_phases}
         end_game(game)
 
-      _ ->
+      current_phase == :scores ->
+        %{game | phases: next_phases}
+
+      true ->
         game = set_next_teams(game)
         %{game | phases: next_phases, remaining_words: Enum.shuffle(game.words)}
     end
@@ -114,6 +113,7 @@ defmodule Jelly.Guess.Game do
     cond do
       a_points > b_points -> [b, a]
       a_points == b_points -> [b, a]
+      true -> [a, b]
     end
   end
 
@@ -122,9 +122,15 @@ defmodule Jelly.Guess.Game do
   end
 
   defp maybe_complete_phase(game) do
-    case game.remaining_words do
-      [] -> set_next_phase(game)
-      _ -> game
+    cond do
+      current_phase(game) in @setup_phases && length(game.words) == length(game.players) * 3 ->
+        set_next_phase(game)
+
+      current_phase(game) in @guessing_phases && game.remaining_words == [] ->
+        set_next_phase(game)
+
+      true ->
+        game
     end
   end
 
