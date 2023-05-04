@@ -35,18 +35,33 @@ defmodule JellyWeb.PresencesComponent do
 
     send_to_parent(presences)
 
-    socket = assign(socket, :presences, presences)
+    socket = assign(socket, presences: presences, player: player)
     {:ok, socket}
   end
 
+  attr :presences, :list, default: []
+  attr :class, :string, default: nil
+
   def render(assigns) do
     ~H"""
-    <div>
-      <ul>
-        <li :for={{_player_id, data} <- @presences}>
+    <div class="flex sm:flex-col gap-x-4 sm:gap-y-4 items-center sm:items-start h-full">
+      <div
+        :for={{player_id, data} <- @presences}
+        class={[
+          "flex flex-col sm:flex-row gap-x-2 items-center ",
+          if(player_id == @player.id, do: "order-first")
+        ]}
+      >
+        <div class={[
+          "w-8 h-8 rounded-full shrink-0",
+          if(player_id == @player.id, do: "bg-gray-50/80", else: "bg-gray-50/50")
+        ]}>
+          <Heroicons.user class="p-1 text-gray-900" />
+        </div>
+        <p class="text-gray-50 shrink-1">
           <%= data.nickname %>
-        </li>
-      </ul>
+        </p>
+      </div>
     </div>
     """
   end

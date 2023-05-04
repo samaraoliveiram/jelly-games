@@ -17,22 +17,22 @@ defmodule JellyWeb.HomeLive do
         class="flex flex-col w-full scale-0 transition-transform ease-in-out duration-1000"
         phx-mounted={JS.add_class("scale-100")}
       >
-        <div class="pb-4">
+        <div class="pb-4 drop-shadow-2xl">
           <.logo />
         </div>
         <%= if @action == nil do %>
           <div class="form w-3/4 mx-auto max-w-xs pt-4">
-            <button class="button-dark" phx-click={JS.patch("/?action=new")}>
-              New Game
-            </button>
-            <button class="button-dark" phx-click={JS.patch("/?action=join")}>
-              Join Game
-            </button>
+            <.link class="link-animation" navigate={~p"/?action=new"}>
+              New
+            </.link>
+            <.link class="link-animation" navigate={~p"/?action=join"}>
+              Join
+            </.link>
           </div>
         <% else %>
           <div class="w-3/4 mx-auto max-w-xs pt-4">
-            <.link phx-click={JS.navigate("/")}>
-              <Heroicons.chevron_left class="w-6 mb-4 stroke-purple-700" />
+            <.link navigate="/" class="text-gray-900 w-">
+              <Heroicons.chevron_left class="w-7 mb-2 " />
             </.link>
             <.live_component
               id="form"

@@ -1,4 +1,5 @@
 defmodule JellyWeb.GamePlug do
+  @moduledoc false
   import Plug.Conn
   import Phoenix.Controller
 

@@ -27,9 +27,14 @@ defmodule JellyWeb.GameLive do
 
   def render(assigns) do
     ~H"""
-    <div class="h-full p-10">
-      <.button phx-click="exit">Exit</.button>
-      <div class="grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 ">
+    <div class="screen-centered flex flex-col p-9 sm:p-16 md:p-24">
+      <.link
+        navigate={~p"/session/delete"}
+        class="flex sm:justify-end mb-1 text-lg font-light text-gray-50"
+      >
+        exit <Heroicons.x_mark class="w-6 my-auto" />
+      </.link>
+      <div class="w-full grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 grid-rows-6 sm:grid-rows-1 h-[94%]">
         <div class="panel">
           <.live_component
             id="presences"
@@ -38,7 +43,7 @@ defmodule JellyWeb.GameLive do
             player={@player}
           />
         </div>
-        <div class="panel col-span-2">
+        <div class="panel sm:col-span-2 row-span-5 sm:row-span-1">
           <div :if={@summary.winner == nil}>
             <.button :if={@summary.current_phase == :defining_teams} phx-click="start">Start</.button>
             <.words_form :if={@summary.current_phase == :word_selection} words_done={@words_done} />
@@ -110,10 +115,6 @@ defmodule JellyWeb.GameLive do
       </p>
     <% end %>
     """
-  end
-
-  def handle_event("exit", _params, socket) do
-    {:noreply, redirect(socket, to: ~p"/session/delete")}
   end
 
   def handle_event("start", _params, socket) do

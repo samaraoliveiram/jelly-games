@@ -5,14 +5,6 @@ const plugin = require("tailwindcss/plugin");
 
 module.exports = {
   content: ["./js/**/*.js", "../lib/*_web.ex", "../lib/*_web/**/*.*ex"],
-  theme: {
-    extend: {
-      fontFamily: {
-        raleway: ["Raleway", "sans-serif"],
-      },
-    },
-  },
-
   Plugins: [
     require("@tailwindcss/forms"),
     plugin(({ addVariant }) =>
