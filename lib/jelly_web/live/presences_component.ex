@@ -58,7 +58,7 @@ defmodule JellyWeb.PresencesComponent do
         ]}>
           <Heroicons.user class="p-1 text-gray-900" />
         </div>
-        <p class="text-gray-50 shrink-1">
+        <p class="text-gray-50 shrink-1 truncate">
           <%= data.nickname %>
         </p>
       </div>

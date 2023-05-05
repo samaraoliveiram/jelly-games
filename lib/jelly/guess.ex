@@ -8,7 +8,7 @@ defmodule Jelly.Guess do
   alias Jelly.Guess.Notifier
   alias Jelly.Guess.{Game, Player, Timer}
 
-  @timeout :timer.minutes(15)
+  @timeout :timer.minutes(10)
   @supervisor Jelly.DynamicSupervisor
   @timer :timer.seconds(60)
 
@@ -85,6 +85,7 @@ defmodule Jelly.Guess do
   @impl true
   def init(game) do
     Timer.start_link(game.code, period: @timer, on_timeout: fn -> switch_team(game.code) end)
+    Process.send_after(self(), :timeout, :timer.minutes(60))
     {:ok, game, @timeout}
   end
 

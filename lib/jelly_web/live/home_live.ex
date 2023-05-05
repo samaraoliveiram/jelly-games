@@ -14,7 +14,11 @@ defmodule JellyWeb.HomeLive do
     ~H"""
     <div class="screen-centered">
       <div
-        class="flex flex-col w-full scale-0 transition-transform ease-in-out duration-1000"
+        class={[
+          "flex flex-col w-full",
+          @action == nil &&
+            "scale-0 transition-transform ease-in-out duration-1000"
+        ]}
         phx-mounted={JS.add_class("scale-100")}
       >
         <div class="pb-4 drop-shadow-2xl">

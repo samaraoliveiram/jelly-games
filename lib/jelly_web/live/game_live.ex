@@ -13,9 +13,10 @@ defmodule JellyWeb.GameLive do
         {:ok,
          assign(socket,
            presences: %{},
+           current_players: get_current_players(summary.players),
            summary: summary,
            words_done: false,
-           timer: 0,
+           timer: nil,
            my_team: get_my_team(summary.teams, socket.assigns.player.id)
          )}
 
@@ -27,57 +28,57 @@ defmodule JellyWeb.GameLive do
 
   def render(assigns) do
     ~H"""
-    <div class="screen-centered flex flex-col p-9 sm:p-16 md:p-24">
-      <.link
-        navigate={~p"/session/delete"}
-        class="flex sm:justify-end mb-1 text-lg font-light text-gray-50"
-      >
-        exit <Heroicons.x_mark class="w-6 my-auto" />
-      </.link>
-      <div class="w-full grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 grid-rows-6 sm:grid-rows-1 h-[94%]">
-        <div class="panel">
+    <div class="screen-centered">
+      <.layout>
+        <:action>
+          <.link class="flex" navigate={~p"/session/delete"}>
+            exit <Heroicons.x_mark class="w-6 my-auto" />
+          </.link>
+        </:action>
+        <:sidebar>
           <.live_component
             id="presences"
             module={JellyWeb.PresencesComponent}
             game_code={@game_code}
             player={@player}
           />
-        </div>
-        <div class="panel sm:col-span-2 row-span-5 sm:row-span-1">
-          <div :if={@summary.winner == nil}>
-            <.button :if={@summary.current_phase == :defining_teams} phx-click="start">Start</.button>
-            <.words_form :if={@summary.current_phase == :word_selection} words_done={@words_done} />
-            <div :if={@summary.current_phase in [:password, :mimicry, :one_password]}>
-              <.timer :if={@timer > 0} timer={@timer} />
-              <p>Your team: Team <%= @my_team %></p>
-              <p>Phase: <%= @summary.current_phase %></p>
-              <p>Team playing: <%= @summary.current_team %></p>
-              <p>
-                Current player: <%= get_in(@players, [@summary.current_player, Access.key!(:nickname)]) %>
-              </p>
-              <div :if={@player.id == @summary.current_player}>
-                <p class="text-lg">É a sua vez!</p>
-                <p class="text-xl"><%= @summary.current_word %></p>
-                <.button phx-click="point">Correct guess</.button>
-              </div>
-            </div>
-            <div :if={@summary.current_phase == :scores}>
-              <.points teams={@summary.teams} />
-              <.button phx-click="next_phase">Next Phase</.button>
-            </div>
+        </:sidebar>
+        <:main>
+          <div class="flex justify-between items-center">
+            <p :if={@my_team} class="text-sm font-semibold text-gray-50">
+              Your team is <%= @my_team %>
+            </p>
+            <div :if={@timer}><.timer timer={@timer} /></div>
           </div>
-          <div :if={@summary.winner != nil}>
-            <p class="4xl">Winner: Team <%= @summary.winner %></p>
-            <.points teams={@summary.teams} />
-            <.button phx-click="restart">Restart Game</.button>
-          </div>
-        </div>
-      </div>
+
+          <.game_stage
+            {@summary}
+            current_players={@current_players}
+            clipboard={url(@socket, ~p"/game/#{@summary.code}")}
+          />
+        </:main>
+      </.layout>
     </div>
     """
   end
 
-  defp words_form(assigns) do
+  def game_stage(%{current_phase: :defining_teams} = assigns) do
+    ~H"""
+    <div class="vertical-center">
+      <p class="text-gray-50 text-xl font-bold leading-7 ">Invite your friends</p>
+      <div class="clipboard">
+        <p class="truncate tracking-[0.4em]"><%= @code %></p>
+        <button id="clipboard" data-content={@clipboard} phx-hook="Clipboard">
+          <Heroicons.clipboard class="w-6 my-auto" />
+        </button>
+      </div>
+      <p class="text-xs text-gray-50">Invite at least 3 friends</p>
+      <.button phx-click="start">Start</.button>
+    </div>
+    """
+  end
+
+  def game_stage(%{current_phase: :word_selection} = assigns) do
     assigns =
       assign(assigns,
         form: to_form(%{"word_1" => "", "word_2" => "", "word_3" => ""}),
@@ -85,21 +86,68 @@ defmodule JellyWeb.GameLive do
       )
 
     ~H"""
-    <div>
-      <.form class="form" for={@form} phx-submit="put_words">
-        <.input field={@form[:word_1]} required disabled={@words_done} />
-        <.input field={@form[:word_2]} required disabled={@words_done} />
-        <.input field={@form[:word_3]} required disabled={@words_done} />
-        <.button class="button-dark" disabled={@words_done}>Submit words</.button>
-      </.form>
+    <div class="vertical-center">
+      <p class="text-gray-50 text-xl font-bold leading-7 text-center">
+        Write words for your <br />friends to guess
+      </p>
+      <div phx-mounted={JS.focus_first(to: "form")} class="w-3/4 mx-auto max-w-xs">
+        <.form class="form" for={@form} phx-submit="put_words">
+          <.input
+            field={@form[:word_1]}
+            required
+            placeholder="put some smart word"
+            autocomplete="off"
+          />
+          <.input
+            field={@form[:word_2]}
+            required
+            placeholder="put some smart word"
+            autocomplete="off"
+          />
+          <.input
+            field={@form[:word_3]}
+            required
+            placeholder="put some smart word"
+            autocomplete="off"
+          />
+          <.button>Done</.button>
+        </.form>
+      </div>
+      <p class="text-xs text-gray-50 text-center">
+        Remember, your team will also <br /> have to guess these words 🤪
+      </p>
+    </div>
+    """
+  end
+
+  def game_stage(assigns) do
+    ~H"""
+    <div class="vertical-center text-gray-50 text-center flex flex-col gap-16">
+      <div>
+        <p class="text-xs pb-2">The phase is</p>
+        <p class=" text-2xl font-bold">
+          <%= to_string(@current_phase) |> String.capitalize() %>
+        </p>
+      </div>
+      <div>
+        <p class="text-xl font-bold">The team <%= @current_team %> is playing!</p>
+        <p class="text-xs ">Who is playing</p>
+        <p class=" text-2xl font-bold">
+          <%= get_in(@current_players, [
+            @current_player,
+            Access.key!(:nickname)
+          ]) %>
+        </p>
+      </div>
     </div>
     """
   end
 
   defp timer(assigns) do
     ~H"""
-    <div>
-      <p><%= @timer %></p>
+    <div class="flex gap-2 text-gray-50">
+      <Heroicons.clock class="w-7 my-auto" />
+      <p class="text-2xl font-bold"><%= @timer %></p>
     </div>
     """
   end
@@ -126,7 +174,13 @@ defmodule JellyWeb.GameLive do
 
       {:ok, summary} ->
         my_team = get_my_team(summary.teams, socket.assigns.player.id)
-        {:noreply, assign(socket, summary: summary, my_team: my_team)}
+
+        {:noreply,
+         assign(socket,
+           summary: summary,
+           my_team: my_team,
+           current_players: socket.assigns.presences
+         )}
     end
   end
 
@@ -176,5 +230,9 @@ defmodule JellyWeb.GameLive do
   defp get_my_team(teams, player_id) do
     team = Enum.find(teams, fn team -> player_id in team.players end)
     team && team.name
+  end
+
+  defp get_current_players(players) do
+    Enum.into(players, %{}, fn player -> {player.id, player} end)
   end
 end
