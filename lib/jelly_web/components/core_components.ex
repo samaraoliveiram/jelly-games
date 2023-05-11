@@ -256,9 +256,8 @@ defmodule JellyWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
-        @class
+        "phx-submit-loading:opacity-75 rounded-[20px] bg-gray-900/80 hover:bg-gray-900/100 py-2 px-10",
+        "text-xl font-normal leading-7 text-white active:text-white/80 pop-up min-w-[150px]"
       ]}
       {@rest}
     >
@@ -384,11 +383,9 @@ defmodule JellyWeb.CoreComponents do
         id={@id || @name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
-          "text-zinc-900 focus:outline-none focus:ring-4 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400 phx-no-feedback:focus:ring-zinc-800/5",
-          "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5",
-          @errors != [] && "border-rose-400 focus:border-rose-400 focus:ring-rose-400/10"
+          "mt-2 block w-full rounded-full border-gray-300 py-2 px-4 bg-gray-50/80 shadow-inner",
+          "text-gray-900 border-gray-300 focus:outline focus:outline-purple-500 focus:outline-2 text-sm font-light leading-6",
+          "phx-no-feedback:border-gray-800 phx-no-feedback:focus:border-gray-400 phx-no-feedback:focus:ring-gray-800/5"
         ]}
         {@rest}
       />
@@ -657,5 +654,49 @@ defmodule JellyWeb.CoreComponents do
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  slot :sidebar, required: true
+  slot :main, required: true
+  slot :action
+
+  def layout(assigns) do
+    ~H"""
+    <div class="h-full w-full flex flex-col p-9 sm:p-16 md:p-24">
+      <div class="w-fit sm:ml-auto">
+        <div class="grow-0 mb-1 text-lg font-light text-gray-50">
+          <%= render_block(@action) %>
+        </div>
+      </div>
+
+      <div class="grow w-full grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 grid-rows-6 sm:grid-rows-1">
+        <div class="panel py-3 sm:py-5 px-4 overflow-auto">
+          <%= render_block(@sidebar) %>
+        </div>
+        <div class="panel sm:col-span-2 row-span-5 sm:row-span-1 py-3 sm:py-5 px-4 sm:px-7">
+          <%= render_block(@main) %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :code, :string, required: true
+  attr :clipboard, :string, required: true
+
+  def clipboard(assigns) do
+    ~H"""
+    <div class="bg-gray-50/50 py-2.5 px-4 rounded-[20px] flex max-w-[80%] sm:max-w-xs">
+      <p class="truncate tracking-[0.4em]"><%= @code %></p>
+      <button
+        class="bg-transparent hover:bg-transparent p-0 text-gray-900"
+        id="clipboard"
+        data-content={@clipboard}
+        phx-hook="Clipboard"
+      >
+        <Heroicons.clipboard class="w-6 h-6 my-auto hover:text-gray-50" />
+      </button>
+    </div>
+    """
   end
 end

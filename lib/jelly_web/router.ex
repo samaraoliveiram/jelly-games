@@ -26,7 +26,7 @@ defmodule JellyWeb.Router do
   scope "/", JellyWeb do
     pipe_through [:browser, :require_player]
 
-    live_session :has_player, on_mount: {JellyWeb.GamePlug, :ensure_has_player} do
+    live_session :has_player, on_mount: {JellyWeb.GamePlug, :ensure_has_game_info} do
       live "/game/:id", GameLive
     end
   end

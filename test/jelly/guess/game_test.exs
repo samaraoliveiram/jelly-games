@@ -25,40 +25,52 @@ defmodule Jelly.Guess.GameTest do
     end
   end
 
-  describe "put_words/2" do
+  describe "put_words/3" do
     test "should insert player words" do
-      players = build_list(4, :player)
+      players = [player | _] = build_list(4, :player)
       words = words_list(3)
 
       assert %{words: ^words} =
                Game.new(gen_game_code())
                |> Game.define_teams(players)
-               |> Game.put_words(words)
+               |> Game.put_words(words, player.id)
     end
 
     test "should merge players words" do
-      players = build_list(4, :player)
+      players = [player_1, player_2 | _] = build_list(4, :player)
 
       %{words: words} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(3))
-        |> Game.put_words(words_list(3))
+        |> Game.put_words(words_list(3), player_1)
+        |> Game.put_words(words_list(3), player_2)
 
       assert length(words) == 6
     end
 
-    test "should move next phase if enough words" do
-      players = build_list(4, :player)
+    test "should move next phase if all players sent words" do
+      players = [player_1 | rest] = build_list(4, :player)
 
       game =
         %{phases: [old_phase | _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(6))
+        |> put_words(rest)
 
-      %{phases: [new_phase | _]} = Game.put_words(game, words_list(6))
+      %{phases: [new_phase | _]} = Game.put_words(game, words_list(3), player_1.id)
       assert new_phase != old_phase
+    end
+
+    test "should not update pool of words if player already sent words" do
+      players = [player | _] = build_list(4, :player)
+
+      game =
+        %{words: words} =
+        Game.new(gen_game_code())
+        |> Game.define_teams(players)
+        |> Game.put_words(words_list(3), player.id)
+
+      assert %{words: ^words} = Game.put_words(game, words_list(3), player.id)
     end
   end
 
@@ -69,7 +81,7 @@ defmodule Jelly.Guess.GameTest do
       %{phases: [current_phase | _], teams: [current_team, _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Game.mark_team_point()
 
       assert 1 = current_team.points[current_phase]
@@ -82,7 +94,7 @@ defmodule Jelly.Guess.GameTest do
         %{phases: [old_phase | _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
       %{phases: [new_phase | _]} = Game.mark_team_point(game)
@@ -96,7 +108,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [winner_team | _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
 
       %{teams: [loser_team | _]} = Game.mark_team_point(game)
@@ -110,7 +122,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [team_a | _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Game.mark_team_point()
 
       # team A marks one point
@@ -135,7 +147,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [_team_a | [team_b]]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Game.mark_team_point()
         |> Game.mark_team_point()
 
@@ -161,7 +173,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [%{name: team_name} | _]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
 
       game =
         Map.update!(game, :remaining_words, fn _ -> words_list(1) end)
@@ -182,7 +194,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [_ | [%{name: team_name}]]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
         |> Game.switch_teams()
         |> Map.update!(:remaining_words, fn _ -> words_list(1) end)
         |> Game.mark_team_point()
@@ -205,7 +217,7 @@ defmodule Jelly.Guess.GameTest do
         %{teams: [team_a, team_b]} =
         Game.new(gen_game_code())
         |> Game.define_teams(players)
-        |> Game.put_words(words_list(12))
+        |> put_words(players)
 
       assert %{teams: [^team_b, ^team_a]} = Game.switch_teams(game)
     end
@@ -213,5 +225,11 @@ defmodule Jelly.Guess.GameTest do
 
   defp gen_game_code do
     to_string(System.os_time())
+  end
+
+  defp put_words(game, players) do
+    Enum.reduce(players, game, fn player, game ->
+      Game.put_words(game, words_list(3), player.id)
+    end)
   end
 end

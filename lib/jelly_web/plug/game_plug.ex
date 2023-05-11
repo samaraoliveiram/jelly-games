@@ -31,10 +31,16 @@ defmodule JellyWeb.GamePlug do
     end
   end
 
-  def on_mount(:ensure_has_player, params, session, socket) do
+  def on_mount(:ensure_has_game_info, params, session, socket) do
     socket = mount_game(session, socket)
+    game_code = socket.assigns.game_code
 
-    if socket.assigns.player && socket.assigns.game_code do
+    # game_code != params["id"] ->
+    #   socket = put_flash(socket, :error, "You are already on a game")
+    #   socket = redirect(socket, to: "/?action=join&game_code=#{game_code}")
+    #   {:halt, socket}
+
+    if socket.assigns.player && game_code do
       {:cont, socket}
     else
       game_code = params["id"] || ""

@@ -14,18 +14,22 @@ defmodule JellyWeb.HomeLive do
     ~H"""
     <div class="screen-centered">
       <div
-        class="flex flex-col w-full scale-0 transition-transform ease-in-out duration-1000"
+        class={[
+          "flex flex-col w-full",
+          @action == nil &&
+            "scale-0 transition-transform ease-in-out duration-1000"
+        ]}
         phx-mounted={JS.add_class("scale-100")}
       >
         <div class="pb-4 drop-shadow-2xl">
           <.logo />
         </div>
         <%= if @action == nil do %>
-          <div class="form w-3/4 mx-auto max-w-xs pt-4">
-            <.link class="link-animation" navigate={~p"/?action=new"}>
+          <div class="form w-3/4 mx-auto max-w-xs pt-4 text-center">
+            <.link id="new" class="h1 link-animation" navigate={~p"/?action=new"}>
               New
             </.link>
-            <.link class="link-animation" navigate={~p"/?action=join"}>
+            <.link id="join" class="h1 link-animation" navigate={~p"/?action=join"}>
               Join
             </.link>
           </div>

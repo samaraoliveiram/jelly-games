@@ -11,6 +11,7 @@ defmodule Jelly.Guess.Game do
             players: [],
             teams: [],
             words: [],
+            sent_words: [],
             remaining_words: [],
             winner: nil
 
@@ -20,6 +21,7 @@ defmodule Jelly.Guess.Game do
           phases: list(),
           teams: list(),
           words: list(),
+          sent_words: list(),
           remaining_words: list(),
           winner: integer()
         }
@@ -46,14 +48,23 @@ defmodule Jelly.Guess.Game do
       |> Enum.split(index)
       |> Tuple.to_list()
       |> Enum.with_index()
-      |> Enum.map(fn {index, players} -> Team.new(players, index, @guessing_phases) end)
+      |> Enum.map(fn {players, index} -> Team.new(index, players, @guessing_phases) end)
 
     %{game | teams: teams, players: players}
     |> set_next_phase()
   end
 
-  def put_words(%{phases: [:word_selection | _]} = game, new_words) do
-    game = Map.update!(game, :words, fn words -> new_words ++ words end)
+  def put_words(%{phases: [:word_selection | _]} = game, new_words, player_id)
+      when length(new_words) == 3 do
+    game =
+      if player_id in game.sent_words do
+        game
+      else
+        game
+        |> Map.update!(:words, fn words -> new_words ++ words end)
+        |> Map.update!(:sent_words, fn players -> [player_id | players] end)
+      end
+
     maybe_complete_phase(game)
   end
 
@@ -80,8 +91,8 @@ defmodule Jelly.Guess.Game do
 
     cond do
       next_phases == [] ->
-        game = %{game | phases: next_phases}
-        end_game(game)
+        %{game | phases: next_phases}
+        |> set_winner()
 
       current_phase == :scores ->
         %{game | phases: next_phases}
@@ -123,7 +134,7 @@ defmodule Jelly.Guess.Game do
 
   defp maybe_complete_phase(game) do
     cond do
-      current_phase(game) in @setup_phases && length(game.words) == length(game.players) * 3 ->
+      current_phase(game) in @setup_phases && length(game.players) == length(game.sent_words) ->
         set_next_phase(game)
 
       current_phase(game) in @guessing_phases && game.remaining_words == [] ->
@@ -138,7 +149,7 @@ defmodule Jelly.Guess.Game do
     List.first(game.phases, [])
   end
 
-  defp end_game(game) do
+  defp set_winner(game) do
     team =
       Enum.reduce(game.teams, nil, fn team, acc ->
         previous_team = acc || team

@@ -16,7 +16,6 @@ defmodule JellyWeb.FormComponent do
   end
 
   def render(assigns) do
-    # todo: adjust form validation to only changed field
     ~H"""
     <div phx-mounted={JS.focus_first(to: "form")}>
       <.form class="form" for={@form} phx-submit="submit" phx-change="validate" phx-target={@myself}>
@@ -36,11 +35,11 @@ defmodule JellyWeb.FormComponent do
           autocomplete="off"
         />
         <div class="m-auto">
-          <.button :if={@action == "join"} class="dark-button" phx-disable-with="Joining...">
-            Join Game
+          <.button :if={@action == "join"} phx-disable-with="Joining...">
+            Join
           </.button>
-          <.button :if={@action != "join"} class="dark-button" phx-disable-with="Creating...">
-            New Game
+          <.button :if={@action != "join"} phx-disable-with="Creating...">
+            New
           </.button>
         </div>
       </.form>
