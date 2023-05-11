@@ -15,11 +15,18 @@ body {
 
 .link-animation {
   @apply transition ease-in-out duration-300 hover:-translate-y-1 hover:scale-150;
-  @apply text-gray-50 text-center font-semibold text-xl leading-9;
 }
 
 .screen-centered {
   @apply h-screen w-full fixed top-0 left-0 flex flex-wrap justify-center content-center;
+}
+
+.vertical-center {
+  @apply h-full flex flex-col gap-2 justify-center items-center;
+}
+
+.game-info {
+  @apply h-full flex flex-col gap-16 text-center justify-evenly;
 }
 
 .form {
@@ -33,21 +40,22 @@ body {
   @apply h-full bg-violet-800 rounded-[20px] shadow-sm;
 }
 
-.vertical-center {
-  @apply h-full flex flex-col gap-2 justify-center items-center;
-}
-
-.clipboard {
-  @apply bg-gray-50/50 py-2.5 px-4 rounded-[20px];
-  @apply flex max-w-[80%] sm:max-w-xs;
-  button {
-    @apply bg-transparent hover:bg-transparent p-0 text-gray-900;
-    svg {
-      @apply w-6 h-6 hover:text-gray-50;
-    }
-  }
-}
-
 .pop-up {
   @apply transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110;
+}
+
+.h1 {
+  @apply text-2xl leading-8 font-bold text-gray-50;
+}
+
+.h2 {
+  @apply text-xl leading-7 font-bold text-gray-50;
+}
+
+.h3 {
+  @apply text-sm leading-5 font-semibold text-gray-50;
+}
+
+.text {
+  @apply text-xs leading-4 font-normal text-gray-50;
 }

@@ -15,8 +15,11 @@ defmodule Jelly.Guess do
   @spec new :: {:ok, binary()}
   def new() do
     code = Game.gen_code()
-    DynamicSupervisor.start_child(@supervisor, child_spec(code))
-    {:ok, code}
+
+    case DynamicSupervisor.start_child(@supervisor, child_spec(code)) do
+      {:ok, _} -> {:ok, code}
+      error -> error
+    end
   end
 
   def subscribe(code) do
@@ -33,6 +36,10 @@ defmodule Jelly.Guess do
     end
   end
 
+  def exist?(code) do
+    nil != GenServer.whereis(register_name(code))
+  end
+
   @spec define_teams(binary(), [Player.t()]) :: {:ok, map()} | {:error, any()}
   def define_teams(code, players) do
     if length(players) >= 4 do
@@ -42,10 +49,10 @@ defmodule Jelly.Guess do
     end
   end
 
-  @spec put_words(binary(), [binary()]) :: {:ok, map()} | {:error, any()}
-  def put_words(code, words) do
+  @spec put_words(binary(), [binary()], binary()) :: {:ok, map()} | {:error, any()}
+  def put_words(code, words, player_id) do
     if length(words) >= 3 do
-      GenServer.call(register_name(code), {:put_words, words})
+      GenServer.call(register_name(code), {:put_words, words, player_id})
     else
       {:error, :not_enough_words}
     end
@@ -105,8 +112,8 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def handle_call({:put_words, words}, _, game) do
-    updated_game = Game.put_words(game, words)
+  def handle_call({:put_words, words, player_id}, _, game) do
+    updated_game = Game.put_words(game, words, player_id)
 
     if different_phase?(updated_game, game) do
       handle_instructions(updated_game, broadcast: :game_updated, timer: :start)
@@ -177,6 +184,10 @@ defmodule Jelly.Guess do
     :ok
   end
 
+  def terminate(_reason, _game) do
+    :ok
+  end
+
   defp update_backup(game), do: :ets.insert(:games_table, {game.code, game})
 
   defp delete_backup(code), do: :ets.delete(:games_table, code)
@@ -208,7 +219,9 @@ defmodule Jelly.Guess do
       code: game.code,
       teams: game.teams,
       players: game.players,
+      sent_words: Map.get(game, :sent_words, []),
       current_phase: List.first(game.phases),
+      next_phase: Enum.at(game.phases, 1),
       current_team: Map.get(current_team, :name),
       current_player: Map.get(current_team, :remaining_players, []) |> List.first(%{}),
       current_word: List.first(game.remaining_words),

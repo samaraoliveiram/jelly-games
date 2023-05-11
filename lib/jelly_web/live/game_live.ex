@@ -15,7 +15,6 @@ defmodule JellyWeb.GameLive do
            presences: %{},
            current_players: get_current_players(summary.players),
            summary: summary,
-           words_done: false,
            timer: nil,
            my_team: get_my_team(summary.teams, socket.assigns.player.id)
          )}
@@ -45,7 +44,7 @@ defmodule JellyWeb.GameLive do
         </:sidebar>
         <:main>
           <div class="flex justify-between items-center">
-            <p :if={@my_team} class="text-sm font-semibold text-gray-50">
+            <p :if={@my_team} class="h3">
               Your team is <%= @my_team %>
             </p>
             <div :if={@timer}><.timer timer={@timer} /></div>
@@ -54,6 +53,8 @@ defmodule JellyWeb.GameLive do
           <.game_stage
             {@summary}
             current_players={@current_players}
+            player={@player}
+            my_team={@my_team}
             clipboard={url(@socket, ~p"/game/#{@summary.code}")}
           />
         </:main>
@@ -62,17 +63,23 @@ defmodule JellyWeb.GameLive do
     """
   end
 
+  def game_stage(%{winner: winner} = assigns) when not is_nil(winner) do
+    ~H"""
+    <div class="vertical-center">
+      <p class="text">🏆 The winner is</p>
+      <p class="h1">Team <%= @winner %></p>
+      <p class="text">Congratulations!</p>
+      <.button phx-click="restart">Restart</.button>
+    </div>
+    """
+  end
+
   def game_stage(%{current_phase: :defining_teams} = assigns) do
     ~H"""
     <div class="vertical-center">
-      <p class="text-gray-50 text-xl font-bold leading-7 ">Invite your friends</p>
-      <div class="clipboard">
-        <p class="truncate tracking-[0.4em]"><%= @code %></p>
-        <button id="clipboard" data-content={@clipboard} phx-hook="Clipboard">
-          <Heroicons.clipboard class="w-6 my-auto" />
-        </button>
-      </div>
-      <p class="text-xs text-gray-50">Invite at least 3 friends</p>
+      <p class="h2">Invite your friends</p>
+      <.clipboard code={@code} clipboard={@clipboard} />
+      <p class="text">Invite at least 3 friends</p>
       <.button phx-click="start">Start</.button>
     </div>
     """
@@ -87,52 +94,111 @@ defmodule JellyWeb.GameLive do
 
     ~H"""
     <div class="vertical-center">
-      <p class="text-gray-50 text-xl font-bold leading-7 text-center">
-        Write words for your <br />friends to guess
-      </p>
-      <div phx-mounted={JS.focus_first(to: "form")} class="w-3/4 mx-auto max-w-xs">
+      <div
+        :if={@player.id not in @sent_words}
+        phx-mounted={JS.focus_first(to: "form")}
+        class="w-3/4 mx-auto max-w-xs flex flex-col gap-3 text-center"
+      >
+        <p class="h2">
+          Write words for your <br />friends to guess
+        </p>
         <.form class="form" for={@form} phx-submit="put_words">
           <.input
             field={@form[:word_1]}
+            pattern="[A-Za-z]*"
             required
             placeholder="put some smart word"
             autocomplete="off"
           />
           <.input
             field={@form[:word_2]}
+            pattern="[A-Za-z]*"
             required
             placeholder="put some smart word"
             autocomplete="off"
           />
           <.input
             field={@form[:word_3]}
+            pattern="[A-Za-z]*"
             required
             placeholder="put some smart word"
             autocomplete="off"
           />
           <.button>Done</.button>
         </.form>
+        <p class="text">
+          Remember, your team will also <br /> have to guess these words 🤪
+        </p>
       </div>
-      <p class="text-xs text-gray-50 text-center">
-        Remember, your team will also <br /> have to guess these words 🤪
-      </p>
+      <div :if={@player.id in @sent_words} class="flex flex-col gap-3 text-center">
+        <p class="h2">Words done!</p>
+        <p class="text">Waiting for <%= length(@sent_words) %> / <%= length(@players) %></p>
+      </div>
+    </div>
+    """
+  end
+
+  def game_stage(%{current_phase: :scores} = assigns) do
+    ~H"""
+    <div class="game-info">
+      <div>
+        <p class="text mb-2">The next phase is</p>
+        <p class="h2">
+          <%= to_string(@next_phase) |> String.capitalize() %>
+        </p>
+      </div>
+      <div>
+        <p class="h1 mb-4">Phase Finished!</p>
+        <%= for team <-@teams do %>
+          <p class="h3 mb-4">
+            Team <%= team.name %> guessed <%= get_points(team.points, @next_phase) %>
+          </p>
+        <% end %>
+        <.button phx-click="next_phase">Continue</.button>
+      </div>
+    </div>
+    """
+  end
+
+  def game_stage(%{current_player: current_player, player: player} = assigns)
+      when player.id == current_player do
+    ~H"""
+    <div class="game-info">
+      <div>
+        <p class="text pb-2">The phase is</p>
+        <p class="h1">
+          <%= to_string(@current_phase) |> String.capitalize() %>
+        </p>
+      </div>
+      <div>
+        <p class="h2 mb-4">It's your turn!</p>
+        <p class="text mb-1">Your word is</p>
+        <p class="h1 mb-4"><%= @current_word %></p>
+        <.button phx-click="point">Guessed</.button>
+      </div>
     </div>
     """
   end
 
   def game_stage(assigns) do
     ~H"""
-    <div class="vertical-center text-gray-50 text-center flex flex-col gap-16">
+    <div class="game-info">
       <div>
-        <p class="text-xs pb-2">The phase is</p>
-        <p class=" text-2xl font-bold">
+        <p class="text pb-2">The phase is</p>
+        <p class="h1">
           <%= to_string(@current_phase) |> String.capitalize() %>
         </p>
       </div>
       <div>
-        <p class="text-xl font-bold">The team <%= @current_team %> is playing!</p>
-        <p class="text-xs ">Who is playing</p>
-        <p class=" text-2xl font-bold">
+        <p class="h2 mb-4">
+          <%= if @current_team == @my_team do %>
+            Your team is playing!
+          <% else %>
+            The team <%= @current_team %> is playing!
+          <% end %>
+        </p>
+        <p class="text mb-1">Who is playing</p>
+        <p class="h1">
           <%= get_in(@current_players, [
             @current_player,
             Access.key!(:nickname)
@@ -149,19 +215,6 @@ defmodule JellyWeb.GameLive do
       <Heroicons.clock class="w-7 my-auto" />
       <p class="text-2xl font-bold"><%= @timer %></p>
     </div>
-    """
-  end
-
-  defp points(assigns) do
-    ~H"""
-    <p>Team points</p>
-    <%= for team <-@teams do %>
-      <p>Team <%= team.name %></p>
-      <p :for={{key, value} <- team.points}>
-        <%= to_string(key) %>
-        <%= value %>
-      </p>
-    <% end %>
     """
   end
 
@@ -186,12 +239,14 @@ defmodule JellyWeb.GameLive do
 
   def handle_event("restart", _params, socket) do
     {:ok, summary} = Guess.restart(socket.assigns.game_code)
-    {:noreply, assign(socket, words_done: false, summary: summary)}
+    {:noreply, assign(socket, my_team: nil, summary: summary)}
   end
 
   def handle_event("put_words", params, socket) do
-    {:ok, summary} = Guess.put_words(socket.assigns.game_code, Map.values(params))
-    {:noreply, assign(socket, summary: summary, words_done: true)}
+    {:ok, summary} =
+      Guess.put_words(socket.assigns.game_code, Map.values(params), socket.assigns.player.id)
+
+    {:noreply, assign(socket, summary: summary)}
   end
 
   def handle_event("point", _, socket) do
@@ -205,6 +260,13 @@ defmodule JellyWeb.GameLive do
   end
 
   def handle_info({:game_updated, summary}, socket) do
+    socket =
+      if socket.assigns.my_team == nil && summary.teams != [] do
+        assign(socket, my_team: get_my_team(summary.teams, socket.assigns.player.id))
+      else
+        socket
+      end
+
     {:noreply, assign(socket, summary: summary)}
   end
 
@@ -234,5 +296,12 @@ defmodule JellyWeb.GameLive do
 
   defp get_current_players(players) do
     Enum.into(players, %{}, fn player -> {player.id, player} end)
+  end
+
+  defp get_points(points, next_phase) do
+    case next_phase do
+      :mimicry -> Keyword.get(points, :password, 0)
+      :one_password -> Keyword.get(points, :mimicry, 0)
+    end
   end
 end

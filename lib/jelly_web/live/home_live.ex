@@ -25,11 +25,11 @@ defmodule JellyWeb.HomeLive do
           <.logo />
         </div>
         <%= if @action == nil do %>
-          <div class="form w-3/4 mx-auto max-w-xs pt-4">
-            <.link class="link-animation" navigate={~p"/?action=new"}>
+          <div class="form w-3/4 mx-auto max-w-xs pt-4 text-center">
+            <.link id="new" class="h1 link-animation" navigate={~p"/?action=new"}>
               New
             </.link>
-            <.link class="link-animation" navigate={~p"/?action=join"}>
+            <.link id="join" class="h1 link-animation" navigate={~p"/?action=join"}>
               Join
             </.link>
           </div>

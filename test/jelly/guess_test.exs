@@ -39,37 +39,36 @@ defmodule Jelly.GuessTest do
     end
   end
 
-  describe "put_words/2" do
+  describe "put_words/3" do
     test "should return error if words < 3" do
-      players = build_list(4, :player)
+      players = [player | _] = build_list(4, :player)
       words = words_list(2)
 
       {:ok, game_code} = Guess.new()
       Guess.define_teams(game_code, players)
 
-      assert {:error, :not_enough_words} = Guess.put_words(game_code, words)
+      assert {:error, :not_enough_words} = Guess.put_words(game_code, words, player.id)
     end
 
     test "should return an updated state " do
-      players = build_list(4, :player)
+      players = [player | _] = build_list(4, :player)
       words = words_list(3)
 
       {:ok, game_code} = Guess.new()
       Guess.define_teams(game_code, players)
 
-      assert {:ok, _} = Guess.put_words(game_code, words)
+      assert {:ok, _} = Guess.put_words(game_code, words, player.id)
     end
 
     test "should move phase when all words are filled" do
       players = build_list(4, :player)
-      words = words_list(12)
-
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       {:ok, %{current_phase: old_phase}} = Guess.define_teams(game_code, players)
+      put_words(game_code, players)
 
-      assert {:ok, %{current_phase: new_phase}} = Guess.put_words(game_code, words)
       assert_received {:game_updated, _}
+      assert_received {:game_updated, %{current_phase: new_phase}}
       assert old_phase != new_phase
     end
   end
@@ -80,19 +79,21 @@ defmodule Jelly.GuessTest do
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
-      Guess.put_words(game_code, words_list(12))
+      put_words(game_code, players)
+      Guess.mark_point(game_code)
 
-      assert {:ok, %{teams: [%{points: points} | _]}} = Guess.mark_point(game_code)
-      assert Keyword.values(points) |> Enum.sum() == 1
       assert_received {:game_updated, _}
+      assert_received {:game_updated, _}
+      assert_received {:game_updated, %{teams: [%{points: points} | _]}}
+      assert Keyword.values(points) |> Enum.sum() == 1
     end
 
-    test "when different phase should cancel timer and broadcast move_phase" do
+    test "when end pool of words should cancel timer" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
-      Guess.put_words(game_code, words_list(12))
+      put_words(game_code, players)
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
 
       assert_received {:timer, 0}
@@ -104,7 +105,7 @@ defmodule Jelly.GuessTest do
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
-      Guess.put_words(game_code, words_list(12))
+      put_words(game_code, players)
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
       Guess.next_phase(game_code)
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
@@ -175,5 +176,9 @@ defmodule Jelly.GuessTest do
       {:ok, pid} = Guess.start_link(game_code)
       assert hd(:sys.get_state(pid).phases) == :defining_teams
     end
+  end
+
+  defp put_words(game_code, players) do
+    Enum.each(players, fn player -> Guess.put_words(game_code, words_list(3), player.id) end)
   end
 end

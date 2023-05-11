@@ -680,4 +680,23 @@ defmodule JellyWeb.CoreComponents do
     </div>
     """
   end
+
+  attr :code, :string, required: true
+  attr :clipboard, :string, required: true
+
+  def clipboard(assigns) do
+    ~H"""
+    <div class="bg-gray-50/50 py-2.5 px-4 rounded-[20px] flex max-w-[80%] sm:max-w-xs">
+      <p class="truncate tracking-[0.4em]"><%= @code %></p>
+      <button
+        class="bg-transparent hover:bg-transparent p-0 text-gray-900"
+        id="clipboard"
+        data-content={@clipboard}
+        phx-hook="Clipboard"
+      >
+        <Heroicons.clipboard class="w-6 h-6 my-auto hover:text-gray-50" />
+      </button>
+    </div>
+    """
+  end
 end
