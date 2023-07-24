@@ -665,16 +665,16 @@ defmodule JellyWeb.CoreComponents do
     <div class="h-full w-full flex flex-col p-9 sm:p-16 md:p-24">
       <div class="w-fit sm:ml-auto">
         <div class="grow-0 mb-1 text-lg font-light text-gray-50">
-          <%= render_block(@action) %>
+          <%= render_slot(@action) %>
         </div>
       </div>
 
       <div class="grow w-full grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 grid-rows-6 sm:grid-rows-1">
         <div class="panel py-3 sm:py-5 px-4 overflow-auto">
-          <%= render_block(@sidebar) %>
+          <%= render_slot(@sidebar) %>
         </div>
         <div class="panel sm:col-span-2 row-span-5 sm:row-span-1 py-3 sm:py-5 px-4 sm:px-7">
-          <%= render_block(@main) %>
+          <%= render_slot(@main) %>
         </div>
       </div>
     </div>
