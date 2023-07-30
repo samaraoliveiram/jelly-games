@@ -3,10 +3,11 @@ defmodule Jelly.Guess.Game do
   This modules is the context responsible for dealing with the
   Guess Game functionalities
   """
-  alias Jelly.Guess.Team
+  alias Jelly.Guess.{Team, Player}
 
   @enforce_keys :code
   defstruct code: nil,
+            owner: nil,
             phases: [],
             players: [],
             teams: [],
@@ -17,6 +18,7 @@ defmodule Jelly.Guess.Game do
 
   @type t :: %__MODULE__{
           code: binary(),
+          owner: Player.t(),
           players: list(),
           phases: list(),
           teams: list(),
@@ -30,15 +32,13 @@ defmodule Jelly.Guess.Game do
   @setup_phases [:defining_teams, :word_selection]
   @phases @setup_phases ++ Enum.intersperse(@guessing_phases, :scores)
 
-  def gen_code() do
-    to_string(System.os_time())
+  @spec new(Player.t()) :: t()
+  def new(%Player{} = player) do
+    code = to_string(System.os_time())
+    %__MODULE__{code: code, phases: @phases, owner: player}
   end
 
-  def new(code) do
-    %__MODULE__{code: code, phases: @phases}
-  end
-
-  def define_teams(%{phases: [:defining_teams | _]} = game, players) when length(players) >= 4 do
+  def start(%{phases: [:defining_teams | _]} = game, players) when length(players) >= 4 do
     index = round(length(players) / 2)
 
     teams =
@@ -54,7 +54,7 @@ defmodule Jelly.Guess.Game do
     |> set_next_phase()
   end
 
-  def put_words(%{phases: [:word_selection | _]} = game, new_words, player_id)
+  def send_words(%{phases: [:word_selection | _]} = game, new_words, player_id)
       when length(new_words) == 3 do
     game =
       if player_id in game.sent_words do
