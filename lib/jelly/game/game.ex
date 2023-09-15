@@ -1,9 +1,9 @@
-defmodule Jelly.Guess.Game do
+defmodule Jelly.Game do
   @moduledoc """
   This modules is the context responsible for dealing with the
-  Guess Game functionalities
+  Game functionalities
   """
-  alias Jelly.Guess.{Team, Player}
+  alias Jelly.Game.{Team, Player}
 
   @enforce_keys :code
   defstruct code: nil,
@@ -32,9 +32,13 @@ defmodule Jelly.Guess.Game do
   @setup_phases [:defining_teams, :word_selection]
   @phases @setup_phases ++ Enum.intersperse(@guessing_phases, :scores)
 
-  @spec new(Player.t()) :: t()
-  def new(%Player{} = player) do
-    code = to_string(System.os_time())
+  @spec generate_code :: binary()
+  def generate_code do
+    to_string(System.os_time())
+  end
+
+  @spec new(Player.t(), binary()) :: t()
+  def new(%Player{} = player, code) do
     %__MODULE__{code: code, phases: @phases, owner: player}
   end
 

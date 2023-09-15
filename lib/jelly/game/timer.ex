@@ -1,11 +1,11 @@
-defmodule Jelly.Guess.Timer do
+defmodule Jelly.Game.Timer do
   @moduledoc """
   Implements a timer using GenServer were receive a total time in milliseconds,
   sends a message every second until the total time is 0, and implements the
   possibility to restart or cancel the timer
   """
   use GenServer
-  import Jelly.Guess.Notifier
+  import Jelly.Game.Notifier
   require Logger
 
   @interval Application.compile_env(:jelly, :timer_interval) || 1_000

@@ -1,9 +1,9 @@
-defmodule Jelly.GuessFactory do
+defmodule Jelly.GameFactory do
   @moduledoc false
 
   use ExMachina
 
-  alias Jelly.Guess.Player
+  alias Jelly.Game.Player
 
   def player_factory do
     Player.new(sequence("nickname"))

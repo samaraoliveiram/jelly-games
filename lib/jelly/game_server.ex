@@ -1,22 +1,23 @@
-defmodule Jelly.Guess do
+defmodule Jelly.GameServer do
   @moduledoc """
   Game Server API
   It subscribes the caller automatically when server is started, then all events
   will be broadcasted
   """
   use GenServer
-  alias Jelly.Guess.Notifier
-  alias Jelly.Guess.{Game, Player, Timer}
+  alias Jelly.Game
+  alias Jelly.Game.Notifier
+  alias Jelly.Game.{Player, Timer}
 
   @timeout :timer.minutes(10)
   @supervisor Jelly.DynamicSupervisor
   @timer :timer.seconds(60)
 
-  @spec new :: {:ok, binary()}
-  def new() do
-    code = Game.gen_code()
+  @spec new(Player.t()) :: {:ok, binary()}
+  def new(%Player{} = player) do
+    code = Game.generate_code()
 
-    case DynamicSupervisor.start_child(@supervisor, child_spec(code)) do
+    case DynamicSupervisor.start_child(@supervisor, child_spec(code, player)) do
       {:ok, _} -> {:ok, code}
       error -> error
     end
@@ -40,19 +41,19 @@ defmodule Jelly.Guess do
     nil != GenServer.whereis(register_name(code))
   end
 
-  @spec define_teams(binary(), [Player.t()]) :: {:ok, map()} | {:error, any()}
-  def define_teams(code, players) do
+  @spec start(binary(), [Player.t()]) :: {:ok, map()} | {:error, any()}
+  def start(code, players) do
     if length(players) >= 4 do
-      GenServer.call(register_name(code), {:define_teams, players})
+      GenServer.call(register_name(code), {:start, players})
     else
       {:error, :not_enough_players}
     end
   end
 
-  @spec put_words(binary(), [binary()], binary()) :: {:ok, map()} | {:error, any()}
-  def put_words(code, words, player_id) do
+  @spec send_words(binary(), [binary()], binary()) :: {:ok, map()} | {:error, any()}
+  def send_words(code, words, player_id) do
     if length(words) >= 3 do
-      GenServer.call(register_name(code), {:put_words, words, player_id})
+      GenServer.call(register_name(code), {:send_words, words, player_id})
     else
       {:error, :not_enough_words}
     end
@@ -69,11 +70,11 @@ defmodule Jelly.Guess do
   def restart(code), do: GenServer.call(register_name(code), :restart)
 
   @doc false
-  def start_link(code) do
+  def start_link(code, player) do
     game =
       case :ets.lookup(:games_table, code) do
         [] ->
-          game = Game.new(code)
+          game = Game.new(player, code)
           update_backup(game)
           game
 
@@ -102,8 +103,8 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def handle_call({:define_teams, players}, _, game) do
-    game = Game.define_teams(game, players)
+  def handle_call({:start, players}, _, game) do
+    game = Game.start(game, players)
 
     handle_instructions(game, broadcast: :game_updated)
 
@@ -112,11 +113,13 @@ defmodule Jelly.Guess do
   end
 
   @impl true
-  def handle_call({:put_words, words, player_id}, _, game) do
-    updated_game = Game.put_words(game, words, player_id)
+  def handle_call({:send_words, words, player_id}, _, game) do
+    updated_game = Game.send_words(game, words, player_id)
 
     if different_phase?(updated_game, game) do
       handle_instructions(updated_game, broadcast: :game_updated, timer: :start)
+    else
+      handle_instructions(updated_game, broadcast: :game_updated)
     end
 
     update_backup(updated_game)
@@ -148,7 +151,7 @@ defmodule Jelly.Guess do
 
   @impl true
   def handle_call(:restart, _, game) do
-    game = Game.new(game.code)
+    game = Game.new(game.owner, game.code)
     handle_instructions(game, broadcast: :game_updated)
 
     {:reply, {:ok, summary(game)}, game, @timeout}
@@ -233,10 +236,10 @@ defmodule Jelly.Guess do
     length(new_game.phases) != length(old_game.phases)
   end
 
-  defp child_spec(code) do
+  defp child_spec(code, player) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [code]},
+      start: {__MODULE__, :start_link, [code, player]},
       restart: :transient
     }
   end

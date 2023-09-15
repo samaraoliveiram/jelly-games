@@ -1,4 +1,4 @@
-defmodule Jelly.Guess.Notifier do
+defmodule Jelly.Game.Notifier do
   @moduledoc """
   Abstraction for subscribe and publish game events
   """

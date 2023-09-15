@@ -1,7 +1,7 @@
-defmodule Jelly.Guess.Team do
+defmodule Jelly.Game.Team do
   @moduledoc false
 
-  alias Jelly.Guess.Player
+  alias Jelly.Game.Player
 
   @enforce_keys :name
   defstruct players: [], remaining_players: [], points: [], name: nil

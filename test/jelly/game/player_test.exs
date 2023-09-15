@@ -1,6 +1,6 @@
 defmodule Jelly.Game.PlayerTest do
   use ExUnit.Case
-  alias Jelly.Guess.Player
+  alias Jelly.Game.Player
 
   test "returns a valid player" do
     nickname = "nickname"

@@ -1,9 +1,10 @@
 defmodule Jelly.Guess.TimerTest do
   use ExUnit.Case
-  alias Jelly.Guess.{Game, Timer, Notifier}
+  alias Jelly.Game
+  alias Jelly.Game.{Timer, Notifier}
 
   setup do
-    %{code: Game.gen_code()}
+    %{code: Game.generate_code()}
   end
 
   test "should start server", %{code: code} do

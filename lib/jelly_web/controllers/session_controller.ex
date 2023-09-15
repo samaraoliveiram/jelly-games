@@ -4,7 +4,7 @@ defmodule JellyWeb.SessionController do
   def new(conn, params) do
     %{"nickname" => nickname, "game_code" => game_code} = params
 
-    player = Jelly.Guess.Player.new(nickname)
+    player = Jelly.Game.Player.new(nickname)
 
     conn
     |> put_session(:player, player)

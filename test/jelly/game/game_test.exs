@@ -1,35 +1,46 @@
-defmodule Jelly.Guess.GameTest do
+defmodule Jelly.GameTest do
   use ExUnit.Case, async: true
-  alias Jelly.Guess.Game
+  alias Jelly.Game
 
-  import Jelly.GuessFactory
+  import Jelly.GameFactory
 
-  test "new/0 should return a Game struct" do
-    owner = build(:player)
-    assert %Game{owner: ^owner} = Game.new(owner)
+  setup do
+    %{code: Game.generate_code()}
+  end
+
+  describe "generating a new game" do
+    test "generate_code/0 should return a game code" do
+      code = Game.generate_code()
+      assert is_binary(code)
+    end
+
+    test "new/2 should return a Game struct", %{code: code} do
+      owner = build(:player)
+      assert %Game{owner: ^owner} = Game.new(owner, code)
+    end
   end
 
   describe "start/2" do
-    test "should divide players into two equals teams" do
+    test "should divide players into two equals teams", %{code: code} do
       players = build_list(4, :player)
 
       assert %{teams: [team1, team2]} =
                players
                |> List.first()
-               |> Game.new()
+               |> Game.new(code)
                |> Game.start(players)
 
       assert length(team1.players) == length(team2.players)
     end
 
-    test "should set next phase" do
+    test "should set next phase", %{code: code} do
       players = build_list(4, :player)
 
       game =
         %{phases: [old_phase | _]} =
         players
         |> List.first()
-        |> Game.new()
+        |> Game.new(code)
 
       %{phases: [new_phase | _]} = Game.start(game, players)
 
@@ -38,23 +49,23 @@ defmodule Jelly.Guess.GameTest do
   end
 
   describe "send_words/3" do
-    test "should insert player words" do
+    test "should insert player words", %{code: code} do
       players = [player | _] = build_list(4, :player)
       words = words_list(3)
 
       assert %{words: ^words} =
                player
-               |> Game.new()
+               |> Game.new(code)
                |> Game.start(players)
                |> Game.send_words(words, player.id)
     end
 
-    test "should merge players words" do
+    test "should merge players words", %{code: code} do
       players = [player_1, player_2 | _] = build_list(4, :player)
 
       %{words: words} =
         player_1
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> Game.send_words(words_list(3), player_1)
         |> Game.send_words(words_list(3), player_2)
@@ -62,13 +73,13 @@ defmodule Jelly.Guess.GameTest do
       assert length(words) == 6
     end
 
-    test "should move next phase if all players sent words" do
+    test "should move next phase if all players sent words", %{code: code} do
       players = [player_1 | rest] = build_list(4, :player)
 
       game =
         %{phases: [old_phase | _]} =
         player_1
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(rest)
 
@@ -76,13 +87,13 @@ defmodule Jelly.Guess.GameTest do
       assert new_phase != old_phase
     end
 
-    test "should not update pool of words if player already sent words" do
+    test "should not update pool of words if player already sent words", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{words: words} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> Game.send_words(words_list(3), player.id)
 
@@ -91,12 +102,12 @@ defmodule Jelly.Guess.GameTest do
   end
 
   describe "mark_point/2" do
-    test "should update the point of the current team in the current phase" do
+    test "should update the point of the current team in the current phase", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       %{phases: [current_phase | _], teams: [current_team, _]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         |> Game.mark_team_point()
@@ -104,13 +115,13 @@ defmodule Jelly.Guess.GameTest do
       assert 1 = current_team.points[current_phase]
     end
 
-    test "should move phase if all words were guessed" do
+    test "should move phase if all words were guessed", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{phases: [old_phase | _]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         |> make_all_words_guessed()
@@ -119,13 +130,13 @@ defmodule Jelly.Guess.GameTest do
       assert new_phase != old_phase
     end
 
-    test "should put loser team first when remaining words end" do
+    test "should put loser team first when remaining words end", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [winner_team | _]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         |> make_all_words_guessed()
@@ -134,13 +145,13 @@ defmodule Jelly.Guess.GameTest do
       assert winner_team.name != loser_team.name
     end
 
-    test "should switch team when remaining words end and they are tied" do
+    test "should switch team when remaining words end and they are tied", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [team_a | _]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         # team A marks one point
@@ -159,13 +170,15 @@ defmodule Jelly.Guess.GameTest do
       assert team_a.name == current_team.name
     end
 
-    test "should not switch team when remaining words end and current team is the loser" do
+    test "should not switch team when remaining words end and current team is the loser", %{
+      code: code
+    } do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [_team_a | [team_b]]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         # team a marks 2 points
@@ -185,13 +198,13 @@ defmodule Jelly.Guess.GameTest do
       assert team_b.name == current_team.name
     end
 
-    test "should have winner when finish phases" do
+    test "should have winner when finish phases", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [%{name: team_name} | _]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         |> Game.mark_team_point()
@@ -210,13 +223,13 @@ defmodule Jelly.Guess.GameTest do
       assert %{winner: ^team_name, phases: []} = Game.mark_team_point(game)
     end
 
-    test "the team that didnt the last point can win" do
+    test "the team that didnt the last point can win", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [_team_a | [%{name: team_b}]]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
         |> make_all_words_guessed()
@@ -232,7 +245,6 @@ defmodule Jelly.Guess.GameTest do
         # start next phase
         |> Game.set_next_phase()
         |> make_all_words_guessed()
-        |> dbg
 
       # team a do 1 point
       assert %{winner: ^team_b, phases: []} = Game.mark_team_point(game)
@@ -240,13 +252,13 @@ defmodule Jelly.Guess.GameTest do
   end
 
   describe "switch_team/1" do
-    test "should switch the current team" do
+    test "should switch the current team", %{code: code} do
       players = [player | _] = build_list(4, :player)
 
       game =
         %{teams: [team_a, team_b]} =
         player
-        |> Game.new()
+        |> Game.new(code)
         |> Game.start(players)
         |> send_all_words(players)
 

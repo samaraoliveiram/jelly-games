@@ -1,8 +1,8 @@
 defmodule Jelly.Guess.TeamTest do
   use ExUnit.Case
-  import Jelly.GuessFactory
+  import Jelly.GameFactory
 
-  alias Jelly.Guess.Team
+  alias Jelly.Game.Team
 
   test "should return a new team" do
     players = build_list(4, :player)

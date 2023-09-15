@@ -1,4 +1,4 @@
-defmodule Jelly.Guess.Player do
+defmodule Jelly.Game.Player do
   @moduledoc false
 
   defstruct nickname: nil, avatar: nil, id: nil
