@@ -1,4 +1,4 @@
-defmodule Jelly.Guess do
+defmodule Jelly.GameServer do
   @moduledoc """
   Game Server API
   It subscribes the caller automatically when server is started, then all events

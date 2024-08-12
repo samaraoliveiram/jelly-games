@@ -3,7 +3,7 @@ defmodule JellyWeb.HomeLive do
   import JellyWeb.Components.Logo
 
   alias Phoenix.LiveView.JS
-  alias Jelly.Guess
+  alias Jelly.GameServer
 
   def mount(_params, _session, socket) do
     socket = assign(socket, action: nil, game_code: nil)
@@ -52,7 +52,7 @@ defmodule JellyWeb.HomeLive do
   end
 
   def handle_info({"new", params}, socket) do
-    {:ok, game_code} = Guess.new()
+    {:ok, game_code} = GameServer.new()
     %{"nickname" => nickname} = params
 
     {:noreply, redirect(socket, to: "/session/new?game_code=#{game_code}&nickname=#{nickname}")}
@@ -61,7 +61,7 @@ defmodule JellyWeb.HomeLive do
   def handle_info({"join", params}, socket) do
     %{"game_code" => game_code, "nickname" => nickname} = params
 
-    case Guess.get(game_code) do
+    case GameServer.get(game_code) do
       {:ok, _} ->
         {:noreply,
          redirect(socket, to: "/session/new?game_code=#{game_code}&nickname=#{nickname}")}
