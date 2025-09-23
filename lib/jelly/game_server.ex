@@ -4,7 +4,7 @@ defmodule Jelly.GameServer do
   It subscribes the caller automatically when server is started, then all events
   will be broadcasted
   """
-  use GenServer
+  use Agent
   alias Jelly.Guess.Notifier
   alias Jelly.Guess.{Game, Player, Timer}
 
@@ -16,28 +16,45 @@ defmodule Jelly.GameServer do
   def new() do
     code = Game.gen_code()
 
-    case DynamicSupervisor.start_child(@supervisor, child_spec(code)) do
+    case DynamicSupervisor.start_child(@supervisor, child_spec(code)) |> IO.inspect() do
       {:ok, _} -> {:ok, code}
       error -> error
     end
+  end
+
+  @doc false
+  def start_link(code) do
+    game =
+      case :ets.lookup(:games_table, code) do
+        [] ->
+          game = Game.new(code)
+          update_backup(game)
+          game
+
+        [{^code, game}] ->
+          game
+      end
+
+    Agent.start_link(__MODULE__, game, name: register_name(code))
+  end
+
+  defp register_name(code) do
+    {:via, Registry, {Jelly.GameRegistry, code}}
   end
 
   def subscribe(code) do
     Notifier.subscribe(code)
   end
 
+  @spec get(binary()) :: {:ok, map()} | {:error, :not_found}
   def get(code) do
-    response = GenServer.whereis(register_name(code))
+    response = Process.whereis(register_name(code))
 
     if is_pid(response) do
-      GenServer.call(register_name(code), :get)
+      Agent.get(register_name(code), &{:ok, summary(&1)})
     else
       {:error, :not_found}
     end
-  end
-
-  def exist?(code) do
-    nil != GenServer.whereis(register_name(code))
   end
 
   @spec define_teams(binary(), [Player.t()]) :: {:ok, map()} | {:error, any()}
@@ -68,37 +85,12 @@ defmodule Jelly.GameServer do
 
   def restart(code), do: GenServer.call(register_name(code), :restart)
 
-  @doc false
-  def start_link(code) do
-    game =
-      case :ets.lookup(:games_table, code) do
-        [] ->
-          game = Game.new(code)
-          update_backup(game)
-          game
-
-        [{^code, game}] ->
-          game
-      end
-
-    GenServer.start_link(__MODULE__, game, name: register_name(code))
-  end
-
-  defp register_name(code) do
-    {:via, Registry, {Jelly.GameRegistry, code}}
-  end
-
   # Server code
   @impl true
   def init(game) do
     Timer.start_link(game.code, period: @timer, on_timeout: fn -> switch_team(game.code) end)
     Process.send_after(self(), :timeout, :timer.minutes(60))
     {:ok, game, @timeout}
-  end
-
-  @impl true
-  def handle_call(:get, _, game) do
-    {:reply, {:ok, summary(game)}, game, @timeout}
   end
 
   @impl true
