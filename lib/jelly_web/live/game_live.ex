@@ -1,14 +1,14 @@
 defmodule JellyWeb.GameLive do
   use JellyWeb, :live_view
 
-  alias Jelly.Guess
+  alias Jelly.GameServer
 
   def mount(%{"id" => game_code}, _session, socket) do
     if connected?(socket) do
-      Guess.subscribe(game_code)
+      GameServer.subscribe(game_code)
     end
 
-    case Guess.get(game_code) do
+    case GameServer.get(game_code) do
       {:ok, summary} ->
         {:ok,
          assign(socket,
@@ -221,7 +221,7 @@ defmodule JellyWeb.GameLive do
   def handle_event("start", _params, socket) do
     players = Map.values(socket.assigns.presences)
 
-    case Guess.define_teams(socket.assigns.game_code, players) do
+    case GameServer.define_teams(socket.assigns.game_code, players) do
       {:error, :not_enough_players} ->
         {:noreply, put_flash(socket, :error, "Need 4 players to start")}
 
@@ -238,24 +238,24 @@ defmodule JellyWeb.GameLive do
   end
 
   def handle_event("restart", _params, socket) do
-    {:ok, summary} = Guess.restart(socket.assigns.game_code)
+    {:ok, summary} = GameServer.restart(socket.assigns.game_code)
     {:noreply, assign(socket, my_team: nil, summary: summary)}
   end
 
   def handle_event("put_words", params, socket) do
     {:ok, summary} =
-      Guess.put_words(socket.assigns.game_code, Map.values(params), socket.assigns.player.id)
+      GameServer.put_words(socket.assigns.game_code, Map.values(params), socket.assigns.player.id)
 
     {:noreply, assign(socket, summary: summary)}
   end
 
   def handle_event("point", _, socket) do
-    {:ok, summary} = Guess.mark_point(socket.assigns.game_code)
+    {:ok, summary} = GameServer.mark_point(socket.assigns.game_code)
     {:noreply, assign(socket, summary: summary)}
   end
 
   def handle_event("next_phase", _, socket) do
-    Guess.next_phase(socket.assigns.game_code)
+    GameServer.next_phase(socket.assigns.game_code)
     {:noreply, socket}
   end
 
