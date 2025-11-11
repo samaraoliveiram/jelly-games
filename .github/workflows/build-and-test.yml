@@ -42,7 +42,7 @@ jobs:
           otp-version: ${{ matrix.otp }}
 
       - name: Get deps cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: deps/
           key: >-
@@ -50,7 +50,7 @@ jobs:
             ${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 
       - name: Get build cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: _build/test/
           key: >-
@@ -72,7 +72,7 @@ jobs:
           mix deps.compile
 
       - name: Restore PLT cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: plt_cache
         with:
           key: |
