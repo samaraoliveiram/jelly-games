@@ -20,33 +20,15 @@ import "phoenix_html";
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
+import {hooks as colocatedHooks} from "phoenix-colocated/jelly"
 import topbar from "../vendor/topbar";
-
-let Hooks = {};
-
-Hooks.Clipboard = {
-  mounted() {
-    const initialInnerHTML = this.el.innerHTML;
-    const { content } = this.el.dataset;
-
-    this.el.addEventListener("click", () => {
-      navigator.clipboard.writeText(content);
-
-      this.el.innerHTML = "Copied!";
-
-      setTimeout(() => {
-        this.el.innerHTML = initialInnerHTML;
-      }, 2000);
-    });
-  },
-};
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
-  hooks: Hooks,
+  hooks: {...colocatedHooks}
 });
 
 // Show progress bar on live navigation and form submits

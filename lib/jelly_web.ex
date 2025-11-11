@@ -43,7 +43,7 @@ defmodule JellyWeb do
         layouts: [html: JellyWeb.Layouts]
 
       import Plug.Conn
-      import JellyWeb.Gettext
+      use Gettext, backend: JellyWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -66,6 +66,13 @@ defmodule JellyWeb do
     end
   end
 
+  def component do
+    quote do
+      use Phoenix.Component
+      use Gettext, backend: JellyWeb.Gettext
+    end
+  end
+
   def html do
     quote do
       use Phoenix.Component
@@ -85,7 +92,7 @@ defmodule JellyWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import JellyWeb.CoreComponents
-      import JellyWeb.Gettext
+      use Gettext, backend: JellyWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

@@ -45,7 +45,7 @@ defmodule JellyWeb.GameLive do
         <:main>
           <div class="flex justify-between items-center">
             <p :if={@my_team} class="h3">
-              Your team is <%= @my_team %>
+              Your team is {@my_team}
             </p>
             <div :if={@timer}><.timer timer={@timer} /></div>
           </div>
@@ -67,7 +67,7 @@ defmodule JellyWeb.GameLive do
     ~H"""
     <div class="vertical-center">
       <p class="text">🏆 The winner is</p>
-      <p class="h1">Team <%= @winner %></p>
+      <p class="h1">Team {@winner}</p>
       <p class="text">Congratulations!</p>
       <.button phx-click="restart">Restart</.button>
     </div>
@@ -132,7 +132,7 @@ defmodule JellyWeb.GameLive do
       </div>
       <div :if={@player.id in @sent_words} class="flex flex-col gap-3 text-center">
         <p class="h2">Words done!</p>
-        <p class="text">Waiting for <%= length(@sent_words) %> / <%= length(@players) %></p>
+        <p class="text">Waiting for {length(@sent_words)} / {length(@players)}</p>
       </div>
     </div>
     """
@@ -144,14 +144,14 @@ defmodule JellyWeb.GameLive do
       <div>
         <p class="text mb-2">The next phase is</p>
         <p class="h2">
-          <%= to_string(@next_phase) |> String.capitalize() %>
+          {to_string(@next_phase) |> String.capitalize()}
         </p>
       </div>
       <div>
         <p class="h1 mb-4">Phase Finished!</p>
         <%= for team <-@teams do %>
           <p class="h3 mb-4">
-            Team <%= team.name %> guessed <%= get_points(team.points, @next_phase) %>
+            Team {team.name} guessed {get_points(team.points, @next_phase)}
           </p>
         <% end %>
         <.button phx-click="next_phase">Continue</.button>
@@ -167,13 +167,13 @@ defmodule JellyWeb.GameLive do
       <div>
         <p class="text pb-2">The phase is</p>
         <p class="h1">
-          <%= to_string(@current_phase) |> String.capitalize() %>
+          {to_string(@current_phase) |> String.capitalize()}
         </p>
       </div>
       <div>
         <p class="h2 mb-4">It's your turn!</p>
         <p class="text mb-1">Your word is</p>
-        <p class="h1 mb-4"><%= @current_word %></p>
+        <p class="h1 mb-4">{@current_word}</p>
         <.button phx-click="point">Guessed</.button>
       </div>
     </div>
@@ -186,7 +186,7 @@ defmodule JellyWeb.GameLive do
       <div>
         <p class="text pb-2">The phase is</p>
         <p class="h1">
-          <%= to_string(@current_phase) |> String.capitalize() %>
+          {to_string(@current_phase) |> String.capitalize()}
         </p>
       </div>
       <div>
@@ -194,15 +194,15 @@ defmodule JellyWeb.GameLive do
           <%= if @current_team == @my_team do %>
             Your team is playing!
           <% else %>
-            The team <%= @current_team %> is playing!
+            The team {@current_team} is playing!
           <% end %>
         </p>
         <p class="text mb-1">Who is playing</p>
         <p class="h1">
-          <%= get_in(@current_players, [
+          {get_in(@current_players, [
             @current_player,
             Access.key!(:nickname)
-          ]) %>
+          ])}
         </p>
       </div>
     </div>
@@ -213,7 +213,7 @@ defmodule JellyWeb.GameLive do
     ~H"""
     <div class="flex gap-2 text-gray-50">
       <Heroicons.clock class="w-7 my-auto" />
-      <p class="text-2xl font-bold"><%= @timer %></p>
+      <p class="text-2xl font-bold">{@timer}</p>
     </div>
     """
   end

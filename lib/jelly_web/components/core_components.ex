@@ -9,10 +9,9 @@ defmodule JellyWeb.CoreComponents do
   Icons are provided by [heroicons](https://heroicons.com), using the
   [heroicons_elixir](https://github.com/mveytsman/heroicons_elixir) project.
   """
-  use Phoenix.Component
+  use JellyWeb, :component
 
   alias Phoenix.LiveView.JS
-  import JellyWeb.Gettext
 
   @doc """
   Renders a modal.
@@ -85,17 +84,17 @@ defmodule JellyWeb.CoreComponents do
               <div id={"#{@id}-content"}>
                 <header :if={@title != []}>
                   <h1 id={"#{@id}-title"} class="text-lg font-semibold leading-8 text-zinc-800">
-                    <%= render_slot(@title) %>
+                    {render_slot(@title)}
                   </h1>
                   <p
                     :if={@subtitle != []}
                     id={"#{@id}-description"}
                     class="mt-2 text-sm leading-6 text-zinc-600"
                   >
-                    <%= render_slot(@subtitle) %>
+                    {render_slot(@subtitle)}
                   </p>
                 </header>
-                <%= render_slot(@inner_block) %>
+                {render_slot(@inner_block)}
                 <div :if={@confirm != [] or @cancel != []} class="ml-6 mb-4 flex items-center gap-5">
                   <.button
                     :for={confirm <- @confirm}
@@ -104,14 +103,14 @@ defmodule JellyWeb.CoreComponents do
                     phx-disable-with
                     class="py-2 px-3"
                   >
-                    <%= render_slot(confirm) %>
+                    {render_slot(confirm)}
                   </.button>
                   <.link
                     :for={cancel <- @cancel}
                     phx-click={hide_modal(@on_cancel, @id)}
                     class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                   >
-                    <%= render_slot(cancel) %>
+                    {render_slot(cancel)}
                   </.link>
                 </div>
               </div>
@@ -158,10 +157,9 @@ defmodule JellyWeb.CoreComponents do
     >
       <p :if={@title} class="flex items-center gap-1.5 text-[0.8125rem] font-semibold leading-6">
         <Heroicons.information_circle :if={@kind == :info} mini class="h-4 w-4" />
-        <Heroicons.exclamation_circle :if={@kind == :error} mini class="h-4 w-4" />
-        <%= @title %>
+        <Heroicons.exclamation_circle :if={@kind == :error} mini class="h-4 w-4" /> {@title}
       </p>
-      <p class="mt-2 text-[0.8125rem] leading-5"><%= msg %></p>
+      <p class="mt-2 text-[0.8125rem] leading-5">{msg}</p>
       <button
         :if={@close}
         type="button"
@@ -228,9 +226,9 @@ defmodule JellyWeb.CoreComponents do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="space-y-8 bg-white mt-10">
-        <%= render_slot(@inner_block, f) %>
+        {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-          <%= render_slot(action, f) %>
+          {render_slot(action, f)}
         </div>
       </div>
     </.form>
@@ -261,7 +259,7 @@ defmodule JellyWeb.CoreComponents do
       ]}
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -301,9 +299,11 @@ defmodule JellyWeb.CoreComponents do
   slot :inner_block
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
+    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
@@ -314,7 +314,7 @@ defmodule JellyWeb.CoreComponents do
       assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div>
       <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
         <input type="hidden" name={@name} value="false" />
         <input
@@ -325,18 +325,17 @@ defmodule JellyWeb.CoreComponents do
           checked={@checked}
           class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
           {@rest}
-        />
-        <%= @label %>
+        /> {@label}
       </label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+    <div>
+      <.label for={@id}>{@label}</.label>
       <select
         id={@id}
         name={@name}
@@ -344,39 +343,39 @@ defmodule JellyWeb.CoreComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value=""><%= @prompt %></option>
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+        <option :if={@prompt} value="">{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+    <div>
+      <.label for={@id}>{@label}</.label>
       <textarea
         id={@id || @name}
         name={@name}
         class={[
           "mt-2 block min-h-[6rem] w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
           "text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-800/5 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400 phx-no-feedback:focus:ring-zinc-800/5",
-          "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5",
+          "border-zinc-300 focus:border-zinc-400",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5",
           @errors != [] && "border-rose-400 focus:border-rose-400 focus:ring-rose-400/10"
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
 
   def input(assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+    <div>
+      <.label for={@id}>{@label}</.label>
       <input
         type={@type}
         name={@name}
@@ -385,11 +384,12 @@ defmodule JellyWeb.CoreComponents do
         class={[
           "mt-2 block w-full rounded-full border-gray-300 py-2 px-4 bg-gray-50/80 shadow-inner",
           "text-gray-900 border-gray-300 focus:outline focus:outline-purple-500 focus:outline-2 text-sm font-light leading-6",
-          "phx-no-feedback:border-gray-800 phx-no-feedback:focus:border-gray-400 phx-no-feedback:focus:ring-gray-800/5"
+          @errors == [] && "border-gray-800 focus:border-gray-400 focus:ring-gray-800/5",
+          @errors != [] && "border-rose-400 focus:border-rose-400 focus:ring-rose-400/10"
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -403,7 +403,7 @@ defmodule JellyWeb.CoreComponents do
   def label(assigns) do
     ~H"""
     <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </label>
     """
   end
@@ -415,9 +415,9 @@ defmodule JellyWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="phx-no-feedback:hidden mt-3 flex gap-3 text-sm leading-6 text-rose-600">
+    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
       <Heroicons.exclamation_circle mini class="mt-0.5 h-5 w-5 flex-none fill-rose-500" />
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </p>
     """
   end
@@ -436,13 +436,13 @@ defmodule JellyWeb.CoreComponents do
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
         <h1 class="text-lg font-semibold leading-8 text-zinc-800">
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         </h1>
         <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
-          <%= render_slot(@subtitle) %>
+          {render_slot(@subtitle)}
         </p>
       </div>
-      <div class="flex-none"><%= render_slot(@actions) %></div>
+      <div class="flex-none">{render_slot(@actions)}</div>
     </header>
     """
   end
@@ -483,8 +483,8 @@ defmodule JellyWeb.CoreComponents do
       <table class="mt-11 w-[40rem] sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>
-            <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
+            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
+            <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
           </tr>
         </thead>
         <tbody
@@ -501,7 +501,7 @@ defmodule JellyWeb.CoreComponents do
               <div class="block py-4 pr-6">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
                 <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  <%= render_slot(col, @row_item.(row)) %>
+                  {render_slot(col, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -512,7 +512,7 @@ defmodule JellyWeb.CoreComponents do
                   :for={action <- @action}
                   class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                 >
-                  <%= render_slot(action, @row_item.(row)) %>
+                  {render_slot(action, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -542,8 +542,8 @@ defmodule JellyWeb.CoreComponents do
     <div class="mt-14">
       <dl class="-my-4 divide-y divide-zinc-100">
         <div :for={item <- @item} class="flex gap-4 py-4 sm:gap-8">
-          <dt class="w-1/4 flex-none text-[0.8125rem] leading-6 text-zinc-500"><%= item.title %></dt>
-          <dd class="text-sm leading-6 text-zinc-700"><%= render_slot(item) %></dd>
+          <dt class="w-1/4 flex-none text-[0.8125rem] leading-6 text-zinc-500">{item.title}</dt>
+          <dd class="text-sm leading-6 text-zinc-700">{render_slot(item)}</dd>
         </div>
       </dl>
     </div>
@@ -568,7 +568,7 @@ defmodule JellyWeb.CoreComponents do
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
         <Heroicons.arrow_left solid class="w-3 h-3 stroke-current inline" />
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </.link>
     </div>
     """
@@ -665,16 +665,16 @@ defmodule JellyWeb.CoreComponents do
     <div class="h-full w-full flex flex-col p-9 sm:p-16 md:p-24">
       <div class="w-fit sm:ml-auto">
         <div class="grow-0 mb-1 text-lg font-light text-gray-50">
-          <%= render_slot(@action) %>
+          {render_slot(@action)}
         </div>
       </div>
 
       <div class="grow w-full grid gap-y-4 sm:gap-x-4 grid-cols-1 sm:grid-cols-3 grid-rows-6 sm:grid-rows-1">
         <div class="panel py-3 sm:py-5 px-4 overflow-auto">
-          <%= render_slot(@sidebar) %>
+          {render_slot(@sidebar)}
         </div>
         <div class="panel sm:col-span-2 row-span-5 sm:row-span-1 py-3 sm:py-5 px-4 sm:px-7">
-          <%= render_slot(@main) %>
+          {render_slot(@main)}
         </div>
       </div>
     </div>
@@ -686,13 +686,31 @@ defmodule JellyWeb.CoreComponents do
 
   def clipboard(assigns) do
     ~H"""
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Clipboard">
+      export default {
+        mounted() {
+          const initialInnerHTML = this.el.innerHTML;
+          const { content } = this.el.dataset;
+
+          this.el.addEventListener("click", () => {
+            navigator.clipboard.writeText(content);
+
+            this.el.innerHTML = "Copied!";
+
+            setTimeout(() => {
+              this.el.innerHTML = initialInnerHTML;
+            }, 2000);
+          });
+          }
+        }
+    </script>
     <div class="bg-gray-50/50 py-2.5 px-4 rounded-[20px] flex max-w-[80%] sm:max-w-xs">
-      <p class="truncate tracking-[0.4em]"><%= @code %></p>
+      <p class="truncate tracking-[0.4em]">{@code}</p>
       <button
         class="bg-transparent hover:bg-transparent p-0 text-gray-900"
         id="clipboard"
         data-content={@clipboard}
-        phx-hook="Clipboard"
+        phx-hook=".Clipboard"
       >
         <Heroicons.clipboard class="w-6 h-6 my-auto hover:text-gray-50" />
       </button>
