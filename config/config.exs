@@ -12,6 +12,7 @@ config :jelly,
 
 # Configures the endpoint
 config :jelly, JellyWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: JellyWeb.ErrorHTML, json: JellyWeb.ErrorJSON],
@@ -31,12 +32,12 @@ config :jelly, Jelly.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.14.41",
+  version: "0.17.11",
   default: [
     args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
 # Configure tailwind (the version is required)
@@ -45,7 +46,7 @@ config :tailwind,
   default: [
     args: ~w(
       --config=tailwind.config.js
-      --input=../priv/static/assets/app.css.tailwind
+      --input=css/app.css
       --output=../priv/static/assets/app.css
     ),
     cd: Path.expand("../assets", __DIR__)
@@ -58,14 +59,6 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
-
-# Configure dart to use sass
-config :dart_sass,
-  version: "1.54.5",
-  default: [
-    args: ~w(css/app.scss ../priv/static/assets/app.css.tailwind),
-    cd: Path.expand("../assets", __DIR__)
-  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
