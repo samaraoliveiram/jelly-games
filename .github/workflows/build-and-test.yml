@@ -9,10 +9,12 @@ on:
       - main
 
 jobs:
-    name: 'Jelly CD'
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/base.cd.yml
+  base-check-elixir:
+    name: Jelly CD
+    uses: ./.github/workflows/base.ci.yml
     with:
-      matrix: ${{ toJson(matrix) }}
-    secrets: inherit
+      project-name: jelly-games
+      project-directory: ./jelly-games
+      db-image: 16.3
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
