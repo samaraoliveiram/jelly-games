@@ -24,6 +24,7 @@ defmodule Jelly.MixProject do
   def cli do
     [
       preferred_envs: [
+        ci: :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -101,6 +102,13 @@ defmodule Jelly.MixProject do
         "tailwind default --minify",
         "esbuild default --minify",
         "phx.digest"
+      ],
+      ci: [
+        "compile --warnings-as-errors",
+        "format",
+        "dialyzer",
+        "credo --strict",
+        "test"
       ]
     ]
   end
