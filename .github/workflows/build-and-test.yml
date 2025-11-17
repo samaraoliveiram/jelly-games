@@ -9,12 +9,10 @@ on:
       - main
 
 jobs:
-  base-check-elixir:
-    name: Jelly CD
+  build-and-check:
     uses: ./.github/workflows/base.ci.yml
     with:
-      project-name: jelly-games
-      project-directory: ./jelly-games
-      db-image: 16.3
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        project-name: jelly-games
+        version-file: .tool-versions
+        db-image: postgres:16.3
+    secrets: inherit

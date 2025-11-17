@@ -6,15 +6,12 @@ on:
       project-name:
         required: true
         type: string
-      project-directory:
+      version-file:
         required: true
         type: string
       db-image:
+        required: true
         type: string
-        default: postgres:16.3
-    secrets:
-      GITHUB_TOKEN:
-        required: false
 
 env:
   MIX_ENV: test
@@ -44,17 +41,17 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1.15.4
         with:
-          version-file: ${{ inputs.project-directory }}/.tool-versions
+          version-file: ${{ inputs.version-file }}
           version-type: strict
 
       - name: Caching deps
         uses: actions/cache@v3
         env:
           cache-name: cache-elixir-deps
-          tool-versions-path: ${{inputs.project-directory}}/.tool-versions
-          mix-lock-path: ${{inputs.project-directory}}/mix.lock
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
         with:
-          path: ${{ inputs.project-directory }}/deps
+          path: deps
           key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
           restore-keys: |
             ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
@@ -63,10 +60,10 @@ jobs:
         uses: actions/cache@v3
         env:
           cache-name: cache-elixir-build
-          tool-versions-path: ${{inputs.project-directory}}/.tool-versions
-          mix-lock-path: ${{inputs.project-directory}}/mix.lock
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
         with:
-          path: ${{ inputs.project-directory }}/_build
+          path: _build
           key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
           restore-keys: |
             ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
@@ -75,10 +72,10 @@ jobs:
         uses: actions/cache@v3
         env:
           cache-name: cache-elixir-dialyzer
-          tool-versions-path: ${{inputs.project-directory}}/.tool-versions
-          mix-lock-path: ${{inputs.project-directory}}/mix.lock
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
         with:
-          path: ${{ inputs.project-directory }}/priv/plts
+          path: /priv/plts
           key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
           restore-keys: |
             ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
