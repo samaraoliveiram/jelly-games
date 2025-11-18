@@ -8,7 +8,7 @@ defmodule Jelly.Guess.Player do
           avatar: binary()
         }
 
-  @spec new(map()) :: t()
+  @spec new(binary(), binary()) :: t()
   def new(nickname, avatar \\ "user") do
     %__MODULE__{
       nickname: nickname,

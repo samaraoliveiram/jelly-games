@@ -1,0 +1,105 @@
+name: Elixir CI
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        required: true
+        type: string
+      version-file:
+        required: true
+        type: string
+      db-image:
+        required: true
+        type: string
+
+env:
+  MIX_ENV: test
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-22.04
+
+    services:
+      db:
+        image: ${{ inputs.db-image }}
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_DB: server_test
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1.15.4
+        with:
+          version-file: ${{ inputs.version-file }}
+          version-type: strict
+
+      - name: Caching deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-deps
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
+        with:
+          path: deps
+          key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
+          restore-keys: |
+            ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
+
+      - name: Caching build
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-build
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
+        with:
+          path: _build
+          key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
+          restore-keys: |
+            ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
+
+      - name: Caching dialyzer PLT
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-dialyzer
+          tool-versions-path: ${{ inputs.version-file }}
+          mix-lock-path: mix.lock
+        with:
+          path: /priv/plts
+          key: ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(env.tool-versions-path) }}-${{ hashFiles(env.mix-lock-path) }}
+          restore-keys: |
+            ${{ inputs.project-name }}-${{ runner.os }}-${{ env.cache-name }}-
+
+      - name: Get deps
+        run: mix deps.get
+
+      - name: Run mix compile
+        run: mix compile --warnings-as-errors
+
+      - name: Run mix format
+        run: mix format --check-formatted
+
+      - name: Check unused deps
+        run: mix deps.unlock --check-unused
+
+      - name: Run Credo
+        run: mix credo --strict
+
+      - name: Run mix test
+        run: mix test
+
+      - name: Dialyzer create PLT
+        run: mix dialyzer --plt --force-check
+
+      - name: Run Dialyzer
+        run: mix dialyzer --format github
