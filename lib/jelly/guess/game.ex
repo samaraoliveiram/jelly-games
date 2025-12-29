@@ -103,6 +103,8 @@ defmodule Jelly.Guess.Game do
     end
   end
 
+  def guessing_phases(), do: @guessing_phases
+
   defp set_next_teams(game) do
     teams =
       if current_phase(game) in @guessing_phases do

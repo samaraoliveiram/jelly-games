@@ -3,63 +3,39 @@ defmodule JellyWeb.GameLive do
 
   alias Jelly.Guess
 
-  def mount(%{"id" => game_code}, _session, socket) do
-    if connected?(socket) do
-      Guess.subscribe(game_code)
-    end
-
-    case Guess.get(game_code) do
-      {:ok, summary} ->
-        {:ok,
-         assign(socket,
-           presences: %{},
-           current_players: get_current_players(summary.players),
-           summary: summary,
-           timer: nil,
-           my_team: get_my_team(summary.teams, socket.assigns.player.id)
-         )}
-
-      _ ->
-        socket = put_flash(socket, :error, "Game no longer available")
-        {:ok, redirect(socket, to: "/session/delete")}
-    end
-  end
-
   def render(assigns) do
     ~H"""
-    <div class="screen-centered">
-      <.layout>
-        <:action>
-          <.link class="flex" navigate={~p"/session/delete"}>
-            exit <Heroicons.x_mark class="w-6 my-auto" />
-          </.link>
-        </:action>
-        <:sidebar>
-          <.live_component
-            id="presences"
-            module={JellyWeb.PresencesComponent}
-            game_code={@game_code}
-            player={@player}
-          />
-        </:sidebar>
-        <:main>
-          <div class="flex justify-between items-center">
-            <p :if={@my_team} class="h3">
-              Your team is {@my_team}
-            </p>
-            <div :if={@timer}><.timer timer={@timer} /></div>
-          </div>
+    <.layout>
+      <:action>
+        <.link class="flex" navigate={~p"/session/delete"}>
+          exit <Heroicons.x_mark class="w-6 my-auto" />
+        </.link>
+      </:action>
+      <:sidebar>
+        <.live_component
+          id="presences"
+          module={JellyWeb.PresencesComponent}
+          game_code={@game_code}
+          player={@player}
+        />
+      </:sidebar>
+      <:main>
+        <div class="flex justify-between items-center">
+          <p :if={@my_team} class="h3">
+            Your team is {@my_team}
+          </p>
+          <div :if={@timer}><.timer timer={@timer} /></div>
+        </div>
 
-          <.game_stage
-            {@summary}
-            current_players={@current_players}
-            player={@player}
-            my_team={@my_team}
-            clipboard={url(@socket, ~p"/game/#{@summary.code}")}
-          />
-        </:main>
-      </.layout>
-    </div>
+        <.game_stage
+          {@summary}
+          current_players={@current_players}
+          player={@player}
+          my_team={@my_team}
+          clipboard={url(@socket, ~p"/game/#{@summary.code}")}
+        />
+      </:main>
+    </.layout>
     """
   end
 
@@ -102,7 +78,7 @@ defmodule JellyWeb.GameLive do
         <p class="h2">
           Write words for your <br />friends to guess
         </p>
-        <.form class="form" for={@form} phx-submit="put_words">
+        <.form for={@form} phx-submit="put_words">
           <.input
             field={@form[:word_1]}
             pattern="[A-Za-z]*"
@@ -148,7 +124,7 @@ defmodule JellyWeb.GameLive do
         </p>
       </div>
       <div>
-        <p class="h1 mb-4">Phase Finished!</p>
+        <p class="h1 mb-4">Phase finished!</p>
         <%= for team <-@teams do %>
           <p class="h3 mb-4">
             Team {team.name} guessed {get_points(team.points, @next_phase)}
@@ -216,6 +192,28 @@ defmodule JellyWeb.GameLive do
       <p class="text-2xl font-bold">{@timer}</p>
     </div>
     """
+  end
+
+  def mount(%{"id" => game_code}, _session, socket) do
+    if connected?(socket) do
+      Guess.subscribe(game_code)
+    end
+
+    case Guess.get(game_code) do
+      {:ok, summary} ->
+        {:ok,
+         assign(socket,
+           presences: %{},
+           current_players: get_current_players(summary.players),
+           summary: summary,
+           timer: nil,
+           my_team: get_my_team(summary.teams, socket.assigns.player.id)
+         )}
+
+      _ ->
+        socket = put_flash(socket, :error, "Game no longer available")
+        {:ok, redirect(socket, to: "/session/delete")}
+    end
   end
 
   def handle_event("start", _params, socket) do
