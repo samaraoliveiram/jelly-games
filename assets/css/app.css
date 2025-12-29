@@ -11,8 +11,9 @@ body {
   }
 }
 
-.link-animation {
-  @apply transition ease-in-out duration-300 hover:-translate-y-1 hover:scale-150;
+
+a[data-phx-id]{
+    @apply text-2xl leading-8 font-bold text-gray-50 transition-transform duration-300 hover:-translate-y-1 hover:scale-150;
 }
 
 .screen-centered {
