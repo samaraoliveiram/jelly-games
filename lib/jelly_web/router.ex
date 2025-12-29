@@ -20,7 +20,9 @@ defmodule JellyWeb.Router do
   scope "/", JellyWeb do
     pipe_through [:browser, :redirect_if_has_player]
 
-    live "/", HomeLive
+    live "/", HomeLive, :index
+    live "/new", HomeLive, :new
+    live "/join", HomeLive, :join
   end
 
   scope "/", JellyWeb do
