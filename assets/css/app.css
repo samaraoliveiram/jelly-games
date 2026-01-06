@@ -1,6 +1,4 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
 
 body {
   @apply h-screen bg-gradient-to-b from-violet-900 to-purple-800;
@@ -13,8 +11,9 @@ body {
   }
 }
 
-.link-animation {
-  @apply transition ease-in-out duration-300 hover:-translate-y-1 hover:scale-150;
+
+a[data-phx-id]{
+    @apply text-2xl leading-8 font-bold text-gray-50 transition-transform duration-300 hover:-translate-y-1 hover:scale-150;
 }
 
 .screen-centered {
@@ -29,15 +28,8 @@ body {
   @apply h-full flex flex-col gap-16 text-center justify-evenly;
 }
 
-.form {
-  @apply flex flex-col space-y-4 justify-center;
-  button {
-    @apply m-auto;
-  }
-}
-
 .panel {
-  @apply h-full bg-violet-800 rounded-[20px] shadow-sm;
+  @apply h-full bg-violet-800 rounded-[20px] shadow-xs;
 }
 
 .pop-up {

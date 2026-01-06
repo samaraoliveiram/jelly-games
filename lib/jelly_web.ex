@@ -92,6 +92,7 @@ defmodule JellyWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import JellyWeb.CoreComponents
+      import JellyWeb.DataEntryComponents
       use Gettext, backend: JellyWeb.Gettext
 
       # Shortcut for generating JS commands

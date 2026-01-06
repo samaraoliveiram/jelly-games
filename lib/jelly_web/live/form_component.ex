@@ -18,7 +18,7 @@ defmodule JellyWeb.FormComponent do
   def render(assigns) do
     ~H"""
     <div phx-mounted={JS.focus_first(to: "form")}>
-      <.form class="form" for={@form} phx-submit="submit" phx-change="validate" phx-target={@myself}>
+      <.form for={@form} phx-submit="submit" phx-change="validate" phx-target={@myself}>
         <.input
           name="nickname"
           field={@form[:nickname]}
