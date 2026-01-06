@@ -12,13 +12,13 @@ defmodule JellyWeb.HomeLive do
         <.logo />
       </div>
       <%= if @live_action == :index do %>
-        <div class="flex flex-col gap-4 pt-4 text-center" >
+        <div class="flex flex-col gap-4 pt-4 text-center">
           <.link patch={~p"/new"}> New </.link>
           <.link patch={~p"/join"}> Join </.link>
         </div>
       <% else %>
         <div class="flex flex-col gap-4 justify-center mx-auto w-3/4 max-w-xs pt-4">
-          <.back phx-click={JS.patch(~p"/")}/>
+          <.back phx-click={JS.patch(~p"/")} />
           <.simple_form for={@form} phx-change="validate" phx-submit="submit">
             <.input
               name="nickname"

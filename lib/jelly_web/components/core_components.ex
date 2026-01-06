@@ -239,12 +239,12 @@ defmodule JellyWeb.CoreComponents do
 
   def back(assigns) do
     ~H"""
-      <button class="flex items-center gap-2 text-sm font-semibold leading-6" {@rest}>
-        <Heroicons.chevron_left class="w-5 h-5" />
-        <p class="text-gray-900">
-          Back
-        </p>
-      </button>
+    <button class="flex items-center gap-2 text-sm font-semibold leading-6" {@rest}>
+      <Heroicons.chevron_left class="w-5 h-5" />
+      <p class="text-gray-900">
+        Back
+      </p>
+    </button>
     """
   end
 

@@ -12,7 +12,7 @@ defmodule Jelly.Guess do
   @supervisor Jelly.DynamicSupervisor
   @timer :timer.seconds(60)
 
-  @spec new :: {:ok, binary()}
+  @spec new :: {:ok, binary()} | DynamicSupervisor.on_start_child()
   def new() do
     code = Game.gen_code()
 

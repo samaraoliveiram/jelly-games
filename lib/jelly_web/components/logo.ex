@@ -8,8 +8,12 @@ defmodule JellyWeb.Components.Logo do
 
   def logo(assigns) do
     ~H"""
-    <div phx-mounted={JS.transition({"transition-transform ease-in-out duration-500", "scale-0", "scale-100"})}
-    class="animation-bounce">
+    <div
+      phx-mounted={
+        JS.transition({"transition-transform ease-in-out duration-500", "scale-0", "scale-100"})
+      }
+      class="animation-bounce"
+    >
       <svg
         class="w-3/4 max-w-xs lg:w-96 mx-auto"
         viewBox="0 0 167 122"
