@@ -94,7 +94,6 @@ defmodule JellyWeb.GameLive do
           />
           <.button>Done</.button>
         </.simple_form>
-
       </div>
       <div :if={@player.id in @sent_words} class="flex flex-col gap-3 text-center">
         <p class="h2">Words done!</p>
