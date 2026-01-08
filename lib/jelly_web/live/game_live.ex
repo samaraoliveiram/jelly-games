@@ -28,11 +28,12 @@ defmodule JellyWeb.GameLive do
         </div>
 
         <.game_stage
-          {@summary}
           current_players={@current_players}
           player={@player}
           my_team={@my_team}
+          words_form={@words_form}
           clipboard={url(@socket, ~p"/game/#{@summary.code}")}
+          {@summary}
         />
       </:main>
     </.layout>
@@ -62,12 +63,6 @@ defmodule JellyWeb.GameLive do
   end
 
   def game_stage(%{current_phase: :word_selection} = assigns) do
-    assigns =
-      assign(assigns,
-        form: to_form(%{"word_1" => "", "word_2" => "", "word_3" => ""}),
-        as: :words_data
-      )
-
     ~H"""
     <div class="vertical-center">
       <div
@@ -78,33 +73,28 @@ defmodule JellyWeb.GameLive do
         <p class="h2">
           Write words for your <br />friends to guess
         </p>
-        <.form for={@form} phx-submit="put_words">
-          <.input
-            field={@form[:word_1]}
-            pattern="[A-Za-z]*"
-            required
-            placeholder="put some smart word"
-            autocomplete="off"
-          />
-          <.input
-            field={@form[:word_2]}
-            pattern="[A-Za-z]*"
-            required
-            placeholder="put some smart word"
-            autocomplete="off"
-          />
-          <.input
-            field={@form[:word_3]}
-            pattern="[A-Za-z]*"
-            required
-            placeholder="put some smart word"
-            autocomplete="off"
-          />
-          <.button>Done</.button>
-        </.form>
         <p class="text">
           Remember, your team will also <br /> have to guess these words 🤪
         </p>
+        <.simple_form for={@words_form} phx-change="validate_words" phx-submit="submit_words">
+          <.input
+            field={@words_form[:word_1]}
+            placeholder="fill in word 1"
+            autocomplete="off"
+          />
+          <.input
+            field={@words_form[:word_2]}
+            placeholder="fill in word 2"
+            autocomplete="off"
+          />
+          <.input
+            field={@words_form[:word_3]}
+            placeholder="fill in word 3"
+            autocomplete="off"
+          />
+          <.button>Done</.button>
+        </.simple_form>
+
       </div>
       <div :if={@player.id in @sent_words} class="flex flex-col gap-3 text-center">
         <p class="h2">Words done!</p>
@@ -207,7 +197,8 @@ defmodule JellyWeb.GameLive do
            current_players: get_current_players(summary.players),
            summary: summary,
            timer: nil,
-           my_team: get_my_team(summary.teams, socket.assigns.player.id)
+           my_team: get_my_team(summary.teams, socket.assigns.player.id),
+           words_form: to_words_form(%{})
          )}
 
       _ ->
@@ -240,11 +231,23 @@ defmodule JellyWeb.GameLive do
     {:noreply, assign(socket, my_team: nil, summary: summary)}
   end
 
-  def handle_event("put_words", params, socket) do
-    {:ok, summary} =
-      Guess.put_words(socket.assigns.game_code, Map.values(params), socket.assigns.player.id)
+  def handle_event("validate_words", params, socket) do
+    {:noreply, assign(socket, words_form: to_words_form(params[:words]))}
+  end
 
-    {:noreply, assign(socket, summary: summary)}
+  def handle_event("submit_words", params, socket) do
+    words = params["words"]
+
+    case validate_words(words) do
+      %{valid?: true} ->
+        {:ok, summary} =
+          Guess.put_words(socket.assigns.game_code, Map.values(words), socket.assigns.player.id)
+
+        {:noreply, assign(socket, summary: summary)}
+
+      _ ->
+        {:noreply, assign(socket, words_form: to_words_form(words))}
+    end
   end
 
   def handle_event("point", _, socket) do
@@ -301,5 +304,17 @@ defmodule JellyWeb.GameLive do
       :mimicry -> Keyword.get(points, :password, 0)
       :one_password -> Keyword.get(points, :mimicry, 0)
     end
+  end
+
+  defp validate_words(words) do
+    types = %{word_1: :string, word_2: :string, word_3: :string}
+
+    {%{}, types}
+    |> Ecto.Changeset.cast(words, Map.keys(types))
+    |> Ecto.Changeset.validate_required(Map.keys(types))
+  end
+
+  defp to_words_form(words) do
+    validate_words(words) |> to_form(as: :words)
   end
 end
