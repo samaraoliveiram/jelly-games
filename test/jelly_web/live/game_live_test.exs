@@ -49,15 +49,34 @@ defmodule JellyWeb.GameLiveTest do
       views
       |> Enum.each(fn view ->
         assert render(view) =~ "Your team is"
-        assert has_element?(view, "input[name='word_1']")
-        assert has_element?(view, "input[name='word_2']")
-        assert has_element?(view, "input[name='word_3']")
+        assert has_element?(view, "input[name='words[word_1]']")
+        assert has_element?(view, "input[name='words[word_2]']")
+        assert has_element?(view, "input[name='words[word_3]']")
         assert has_element?(view, "button", "Done")
       end)
     end
   end
 
   describe "word selection phase" do
+    test "once players submit words counter increases", ctx do
+      views = setup_four_players(ctx.conn, ctx.game_code)
+
+      views
+      |> hd()
+      |> element("button", "Start")
+      |> render_click()
+
+      for {view, idx} <- Enum.with_index(views) do
+        view
+        |> form("form", %{words: %{word_1: "word1", word_2: "word2", word_3: "word3"}})
+        |> render_submit()
+
+        if idx < 3 do
+          assert has_element?(view, "p", "Waiting for #{idx + 1} / #{length(views)}")
+        end
+      end
+    end
+
     test "first phase starts when all players submit words", ctx do
       {[playing_view], guessing_views} =
         ctx.conn
@@ -162,7 +181,7 @@ defmodule JellyWeb.GameLiveTest do
 
     for view <- views do
       view
-      |> form("form", %{word_1: "word1", word_2: "word2", word_3: "word3"})
+      |> form("form", %{words: %{word_1: "word1", word_2: "word2", word_3: "word3"}})
       |> render_submit()
     end
 
