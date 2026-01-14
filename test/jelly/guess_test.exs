@@ -60,6 +60,26 @@ defmodule Jelly.GuessTest do
       assert {:ok, _} = Guess.put_words(game_code, words, player.id)
     end
 
+    test "should broadcast game updated every time player sent words" do
+      players = build_list(4, :player)
+      {:ok, game_code} = Guess.new()
+      Guess.subscribe(game_code)
+      {:ok, %{current_phase: old_phase}} = Guess.define_teams(game_code, players)
+      put_words(game_code, players)
+
+      # stat game event
+      assert_received {:game_updated, _}
+
+      assert_received {:game_updated, %{current_phase: ^old_phase, sent_words: sent_words}}
+      assert length(sent_words) == 1
+      assert_received {:game_updated, %{current_phase: ^old_phase, sent_words: sent_words}}
+      assert length(sent_words) == 2
+      assert_received {:game_updated, %{current_phase: ^old_phase, sent_words: sent_words}}
+      assert length(sent_words) == 3
+      assert_received {:game_updated, %{current_phase: :password, sent_words: sent_words}}
+      assert length(sent_words) == 4
+    end
+
     test "should move phase when all words are filled" do
       players = build_list(4, :player)
       {:ok, game_code} = Guess.new()
@@ -67,9 +87,8 @@ defmodule Jelly.GuessTest do
       {:ok, %{current_phase: old_phase}} = Guess.define_teams(game_code, players)
       put_words(game_code, players)
 
-      assert_received {:game_updated, _}
-      assert_received {:game_updated, %{current_phase: new_phase}}
-      assert old_phase != new_phase
+      assert_received {:game_updated, %{current_phase: ^old_phase}}
+      assert_received {:game_updated, %{current_phase: :password}}
     end
   end
 
@@ -82,6 +101,9 @@ defmodule Jelly.GuessTest do
       put_words(game_code, players)
       Guess.mark_point(game_code)
 
+      assert_received {:game_updated, _}
+      assert_received {:game_updated, _}
+      assert_received {:game_updated, _}
       assert_received {:game_updated, _}
       assert_received {:game_updated, _}
       assert_received {:game_updated, %{teams: [%{points: points} | _]}}
@@ -179,6 +201,8 @@ defmodule Jelly.GuessTest do
   end
 
   defp put_words(game_code, players) do
-    Enum.each(players, fn player -> Guess.put_words(game_code, words_list(3), player.id) end)
+    Enum.each(players, fn player ->
+      Guess.put_words(game_code, words_list(3), player.id)
+    end)
   end
 end

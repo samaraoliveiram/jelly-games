@@ -117,6 +117,8 @@ defmodule Jelly.Guess do
 
     if different_phase?(updated_game, game) do
       handle_instructions(updated_game, broadcast: :game_updated, timer: :start)
+    else
+      handle_instructions(updated_game, broadcast: :game_updated)
     end
 
     update_backup(updated_game)
