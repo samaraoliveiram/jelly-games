@@ -20,7 +20,7 @@ defmodule JellyWeb.DataEntryComponents do
 
   attr :type, :string,
     default: "text",
-    values: ~w(checkbox color date datetime-local email file hidden month number password
+    values: ~w(checkbox toggle color date datetime-local email file hidden month number password
                range radio search select tel text textarea time url week)
 
   attr :field, Phoenix.HTML.FormField,
@@ -66,6 +66,30 @@ defmodule JellyWeb.DataEntryComponents do
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
+    """
+  end
+
+  def input(%{type: "toggle", value: value} = assigns) do
+    assigns =
+      assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
+
+    ~H"""
+    <label class="relative inline-flex items-center cursor-pointer select-none gap-4">
+      <input type="hidden" name={@name} value="false" />
+      <input
+        type="checkbox"
+        name={@name}
+        value="true"
+        checked={@checked}
+        class="sr-only peer"
+        {@rest}
+      />
+      <div class="w-12 h-6 bg-gray-300 rounded-full peer-checked:bg-green-700 transition-colors">
+      </div>
+      <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6">
+      </div>
+      <span class="text-sm">{@label}</span>
+    </label>
     """
   end
 

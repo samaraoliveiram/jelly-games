@@ -429,7 +429,7 @@ defmodule JellyWeb.CoreComponents do
 
   def layout(assigns) do
     ~H"""
-    <div class="h-full w-full flex flex-col p-9 sm:p-16 md:p-24">
+    <div class="h-full w-full flex flex-col p-9 sm:p-16 md:p-24 overflow-y-auto">
       <div class="w-fit sm:ml-auto">
         <div class="grow-0 mb-1 text-lg font-light text-gray-50">
           {render_slot(@action)}
@@ -440,7 +440,7 @@ defmodule JellyWeb.CoreComponents do
         <div class="panel py-3 sm:py-5 px-4 overflow-auto">
           {render_slot(@sidebar)}
         </div>
-        <div class="panel sm:col-span-2 row-span-5 sm:row-span-1 py-3 sm:py-5 px-4 sm:px-7">
+        <div class="panel sm:col-span-2 row-span-5 sm:row-span-1 py-3 sm:py-5 px-4 sm:px-7 overflow-y-auto">
           {render_slot(@main)}
         </div>
       </div>

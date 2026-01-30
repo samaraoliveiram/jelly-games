@@ -54,7 +54,7 @@ defmodule Jelly.Guess.Timer do
     if state.timer do
       :timer.cancel(state.timer)
       Logger.info("Canceled timer")
-      broadcast(state.code, {:timer, 0})
+      broadcast(state.code, {:timer, nil})
 
       {:reply, :ok, %{state | timer: nil}}
     else
@@ -64,7 +64,6 @@ defmodule Jelly.Guess.Timer do
 
   def handle_info(:tick, state) do
     counter = state.counter - @interval
-    Logger.info("Timer counter: #{counter}")
     broadcast(state.code, {:timer, counter})
 
     case counter do

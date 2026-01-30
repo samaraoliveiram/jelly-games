@@ -1,6 +1,6 @@
 defmodule Jelly.GuessTest do
   use ExUnit.Case
-  import Jelly.GuessFactory
+  import Jelly.GameFixtures
 
   alias Jelly.Guess
 
@@ -21,7 +21,7 @@ defmodule Jelly.GuessTest do
 
   describe "define_teams/2" do
     test "should return error if players < 4" do
-      players = build_list(3, :player)
+      players = build_list(3, :player_fixture)
 
       {:ok, game_code} = Guess.new()
 
@@ -29,7 +29,7 @@ defmodule Jelly.GuessTest do
     end
 
     test "should return an updated state with defined teams" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
 
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
@@ -41,8 +41,8 @@ defmodule Jelly.GuessTest do
 
   describe "put_words/3" do
     test "should return error if words < 3" do
-      players = [player | _] = build_list(4, :player)
-      words = words_list(2)
+      players = [player | _] = build_list(4, :player_fixture)
+      words = words_fixture(2)
 
       {:ok, game_code} = Guess.new()
       Guess.define_teams(game_code, players)
@@ -51,8 +51,8 @@ defmodule Jelly.GuessTest do
     end
 
     test "should return an updated state " do
-      players = [player | _] = build_list(4, :player)
-      words = words_list(3)
+      players = [player | _] = build_list(4, :player_fixture)
+      words = words_fixture(3)
 
       {:ok, game_code} = Guess.new()
       Guess.define_teams(game_code, players)
@@ -61,7 +61,7 @@ defmodule Jelly.GuessTest do
     end
 
     test "should broadcast game updated every time player sent words" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       {:ok, %{current_phase: old_phase}} = Guess.define_teams(game_code, players)
@@ -81,7 +81,7 @@ defmodule Jelly.GuessTest do
     end
 
     test "should move phase when all words are filled" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       {:ok, %{current_phase: old_phase}} = Guess.define_teams(game_code, players)
@@ -94,7 +94,7 @@ defmodule Jelly.GuessTest do
 
   describe "mark_point/1 " do
     test "should return an updated state with the team points" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
@@ -111,19 +111,19 @@ defmodule Jelly.GuessTest do
     end
 
     test "when end pool of words should cancel timer" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       put_words(game_code, players)
       Enum.each(1..12, fn _ -> Guess.mark_point(game_code) end)
 
-      assert_received {:timer, 0}
+      assert_received {:timer, nil}
       assert_received {:game_updated, _}
     end
 
     test "when have winner should cancel timer and broadcast end_game" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
@@ -142,21 +142,32 @@ defmodule Jelly.GuessTest do
 
   describe "restart/1" do
     test "should send a new empty state" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
       {:ok, old_state} = Guess.get(game_code)
-      {:ok, empty_state} = Guess.restart(game_code)
+      Guess.restart(game_code)
 
-      assert old_state != empty_state
-      assert %{teams: [], winner: nil} = empty_state
+      assert_receive {:game_updated, %{current_phase: :word_selection}}
+      assert_receive {:game_updated, %{current_phase: :defining_teams} = new_state}
+      assert old_state != new_state
+
+      assert %{
+               teams: [],
+               sent_words: [],
+               next_phase: :word_selection,
+               current_team: %{},
+               current_player: %{},
+               current_word: nil,
+               winner: nil
+             } = new_state
     end
   end
 
   describe "switch_team/1" do
     test "should broadcast an updated state with a differente current team playing" do
-      players = build_list(4, :player)
+      players = build_list(4, :player_fixture)
       {:ok, game_code} = Guess.new()
       Guess.subscribe(game_code)
       Guess.define_teams(game_code, players)
@@ -175,7 +186,7 @@ defmodule Jelly.GuessTest do
 
       {:ok, pid} = Guess.start_link(game_code)
 
-      Guess.define_teams(game_code, build_list(4, :player))
+      Guess.define_teams(game_code, build_list(4, :player_fixture))
       Process.exit(pid, :kaboom)
 
       assert_receive {:EXIT, ^pid, :kaboom}
@@ -191,7 +202,7 @@ defmodule Jelly.GuessTest do
       {:ok, pid} = Guess.start_link(game_code)
       Process.monitor(pid)
 
-      Guess.define_teams(game_code, build_list(4, :player))
+      Guess.define_teams(game_code, build_list(4, :player_fixture))
       send(pid, :timeout)
       assert_receive {:DOWN, _, _, ^pid, _}
 
@@ -202,7 +213,7 @@ defmodule Jelly.GuessTest do
 
   defp put_words(game_code, players) do
     Enum.each(players, fn player ->
-      Guess.put_words(game_code, words_list(3), player.id)
+      Guess.put_words(game_code, words_fixture(3), player.id)
     end)
   end
 end
