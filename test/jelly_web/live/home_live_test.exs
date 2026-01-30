@@ -46,11 +46,12 @@ defmodule JellyWeb.HomeLiveTest do
     test "renders form for join game from game url", %{conn: conn} do
       {:ok, game_code} = Guess.new()
 
-      {:ok, view, _html} = live(conn, "/game/#{game_code}") |> follow_redirect(conn)
+      {:ok, conn} = live(conn, "/game/#{game_code}") |> follow_redirect(conn)
+      {:ok, view, _} = live(conn)
 
       assert has_element?(view, "form")
       assert has_element?(view, "input[name=nickname]")
-      assert has_element?(view, ~s(input[name=game_code][value=""]))
+      refute has_element?(view, ~s(input[name=game_code][value=""]))
       assert has_element?(view, "button", "Join")
     end
 

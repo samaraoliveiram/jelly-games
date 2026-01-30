@@ -50,7 +50,7 @@ defmodule Jelly.Guess.TimerTest do
     Timer.start(code)
 
     assert :ok = Timer.cancel(code)
-    assert_receive {:timer, 0}
+    assert_receive {:timer, nil}
   end
 
   test "should restart timer", %{code: code} do
@@ -61,7 +61,7 @@ defmodule Jelly.Guess.TimerTest do
 
     assert :ok = Timer.restart(code)
 
-    assert_receive {:timer, 0}
+    assert_receive {:timer, nil}
     assert_receive {:timer, 1000}
   end
 
@@ -74,7 +74,7 @@ defmodule Jelly.Guess.TimerTest do
 
     assert :ok = Timer.restart(code)
 
-    assert_receive {:timer, 0}
+    assert_receive {:timer, nil}
     assert_receive {:timer, 1000}
   end
 end
