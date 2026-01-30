@@ -58,6 +58,20 @@ defmodule JellyWeb.GameLiveTest do
   end
 
   describe "word selection phase" do
+    test "validate word change", ctx do
+      views = setup_four_players(ctx.conn, ctx.game_code)
+
+      view = hd(views)
+
+      view
+      |> element("button", "Start")
+      |> render_click()
+
+      view
+      |> form("form", %{words: %{word_1: "word1"}})
+      |> render_change()
+    end
+
     test "once players submit words counter increases", ctx do
       views = setup_four_players(ctx.conn, ctx.game_code)
 
@@ -95,6 +109,54 @@ defmodule JellyWeb.GameLiveTest do
   end
 
   describe "gameplay" do
+    test "view playing shows word", ctx do
+      {[playing_view], _} =
+        ctx.conn
+        |> setup_four_players(ctx.game_code)
+        |> start_game_and_submit_words()
+        |> split_playing_and_guessing()
+
+      {:ok, %{current_word: word}} = Guess.get(ctx.game_code)
+
+      assert has_element?(playing_view, "p", word)
+      assert has_element?(playing_view, "button", "Guessed")
+    end
+
+    test "current player is shown correctly to everyone", ctx do
+      {[_], guessing_views} =
+        ctx.conn
+        |> setup_four_players(ctx.game_code)
+        |> start_game_and_submit_words()
+        |> split_playing_and_guessing()
+
+      {:ok, %{current_team: team, current_player: current_player_id, players: players}} =
+        Guess.get(ctx.game_code)
+
+      current_player = Enum.find(players, &(&1.id == current_player_id))
+
+      Enum.each(guessing_views, fn view ->
+        html = render(view)
+
+        if html =~ "Your team is #{team.name}" do
+          assert html =~ "Your team is playing!"
+
+          assert has_element?(
+                   view,
+                   ".game-info div:last-child p:last-child",
+                   current_player.nickname
+                 )
+        else
+          assert html =~ "The team #{team.name} is playing"
+
+          assert has_element?(
+                   view,
+                   ".game-info div:last-child p:last-child",
+                   current_player.nickname
+                 )
+        end
+      end)
+    end
+
     test "guessing a word moves to next player", ctx do
       {[playing_view], guessing_views} =
         ctx.conn
@@ -152,17 +214,21 @@ defmodule JellyWeb.GameLiveTest do
     end
 
     test "can restart game after winner is shown", ctx do
-      [view | _] =
+      views =
         ctx.conn
         |> setup_four_players(ctx.game_code)
         |> start_game_and_submit_words()
         |> guess_all_phases()
 
-      view
+      views
+      |> hd()
       |> element("button", "Restart")
       |> render_click()
 
-      assert render(view) =~ "Invite your friends"
+      assert Enum.all?(views, fn view ->
+               html = render(view)
+               html =~ "Invite your friends" and String.contains?(html, "Your team is") == false
+             end)
     end
   end
 

@@ -39,7 +39,7 @@ defmodule Jelly.MixProject do
   def application do
     [
       mod: {Jelly.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :wx, :observer]
     ]
   end
 

@@ -66,7 +66,7 @@ defmodule Jelly.Guess do
   @spec switch_team(binary()) :: {:ok, map()} | any()
   def switch_team(code), do: GenServer.cast(register_name(code), :switch_team)
 
-  def restart(code), do: GenServer.call(register_name(code), :restart)
+  def restart(code), do: GenServer.cast(register_name(code), :restart)
 
   @doc false
   def start_link(code) do
@@ -142,20 +142,22 @@ defmodule Jelly.Guess do
       end
 
     handle_instructions(updated_game, messages)
-
     update_backup(updated_game)
 
     {:reply, {:ok, summary(updated_game)}, updated_game, @timeout}
   end
 
   @impl true
-  def handle_call(:restart, _, game) do
+  def handle_cast(:restart, game) do
     game = Game.new(game.code)
-    handle_instructions(game, broadcast: :game_updated)
 
-    {:reply, {:ok, summary(game)}, game, @timeout}
+    handle_instructions(game, broadcast: :game_updated, timer: :cancel)
+    update_backup(game)
+
+    {:noreply, game, @timeout}
   end
 
+  @impl true
   def handle_cast(:next_phase, game) do
     game = Game.set_next_phase(game)
     handle_instructions(game, broadcast: :game_updated, timer: :start)
@@ -224,7 +226,7 @@ defmodule Jelly.Guess do
       sent_words: Map.get(game, :sent_words, []),
       current_phase: List.first(game.phases),
       next_phase: Enum.at(game.phases, 1),
-      current_team: Map.get(current_team, :name),
+      current_team: current_team,
       current_player: Map.get(current_team, :remaining_players, []) |> List.first(%{}),
       current_word: List.first(game.remaining_words),
       winner: game.winner

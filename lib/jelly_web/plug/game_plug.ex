@@ -26,7 +26,7 @@ defmodule JellyWeb.GamePlug do
       game_code = conn.params["id"] || ""
 
       conn
-      |> redirect(to: "/?action=join&game_code=#{game_code}")
+      |> redirect(to: "/join?game_code=#{game_code}")
       |> halt
     end
   end
@@ -44,7 +44,7 @@ defmodule JellyWeb.GamePlug do
       {:cont, socket}
     else
       game_code = params["id"] || ""
-      socket = redirect(socket, to: "/?action=join&game_code=#{game_code}")
+      socket = redirect(socket, to: "/join?game_code=#{game_code}")
       {:halt, socket}
     end
   end
