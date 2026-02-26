@@ -54,6 +54,11 @@ defmodule JellyWeb.GameLive do
       <p class="text">🏆 The winner is</p>
       <p class="h1">Team {@winner}</p>
       <p class="text">Congratulations!</p>
+      <%= for team <- @teams do %>
+        <p class="h3 mmb-4">
+          Team {team.name} guessed {get_total_points(team)}
+        </p>
+      <% end %>
       <.button phx-click="restart">Restart</.button>
     </div>
     """
@@ -306,6 +311,11 @@ defmodule JellyWeb.GameLive do
       :mimicry -> Keyword.get(points, :password, 0)
       :one_password -> Keyword.get(points, :mimicry, 0)
     end
+  end
+
+  defp get_total_points(team) do
+    Enum.reduce(team.points, [], fn {_k, v}, acc -> acc ++ [v] end)
+    |> Enum.sum()
   end
 
   defp validate_words(words) do
